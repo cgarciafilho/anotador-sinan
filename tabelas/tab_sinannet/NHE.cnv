@@ -1,0 +1,415 @@
+;NHE.CNV núcleos hospitalares epidemiológicos atualizado em 26/08/210 pelo GT-SINAN/MS nova definição 190 NHE. ; Patch 4.2
+;Atualização realizada pela UT-VEH em 14 maio 2015.
+;Atualização realizada pela UT-VEH em 15 maio 2015.
+; Revisado pela UT-Sinan 2019
+409 7 L
+      1  ACRE                                               -------
+      2    Rio Branco                                       -------
+  2   3    Hosp de Urgencias e Emergencias de Rio Branco    2001578
+      4  A L A G O A S                                      -------
+      5    Maceió                                           -------
+  5   6      Hosp Escola Dr. Helvio Auto-UNCISAL            2720035
+  5   7      Hosp Universitário Prof.Alberto Antunes        2006197
+  5   8      Maternidade Escola Santa Mônica                2009250
+  5   9      Hosp Geral Prof Osvaldo Brandão Vilela-HGE     2006510
+     10    Arapiraca                                        -------
+ 10  11      Unid de Emergência Doutor Daniel Houly-UEDH    3015408
+     12  A M A Z O N A S                                    -------
+     13    Manaus                                           -------
+ 13  14      Fundação Medicina Tropical de Amazonas         2013606
+ 13  15      Hospital e PS Dr. Aristóteles Platão B. Araujo 5169976
+ 13  16      Hospital e PS Dr. João Lúcio Pereira Machado   2019574
+ 13  17      Hospital e PS da Criança Zona Leste            2012030
+ 13  18      Hospital e PS da Criança Zona Oeste            2018071
+ 13  19      Pronto Socorro 28 de Agosto                    2013649
+ 13  20      Pronto Socorro da Criança Zona Sul*            2012472
+     21  A M A P Á                                          -------
+     22    Macapá                                           -------
+ 22  23      Hosp Criança e Adolescente do Estado do Amapá  2019647
+ 22  24      Hospital de Emergências - HE                   2020653
+ 22  25      Hospital de Clínicas Dr. Alberto Lima - HCAL   2020645
+     26  B A H I A                                          -------
+     27    Feira de Santana                                 -------
+ 27  28      Hosp Geral Clériston Andrade                   2799758
+ 27  29      Hospital Estadual da Criança                   6602533
+     30    Jequié                                           -------
+ 30  31      Hosp Geral Prado Valadares                     2400693
+     32    Salvador                                         -------
+ 32  33      Hosp Couto Maia                                0005428
+ 32  34      Hosp Especializado Octavio Mangabeira          0004065
+ 32  35      Hosp Geral de Estado                           0004294
+ 32  36      Hosp Geral Ernesto Simões Filho                0004073
+ 32  37      Hosp Geral Roberto Santos                      0003859
+ 32  38      Hosp São Rafael 				    0003808
+ 32  39      Hosp Santa Casa Mis Bahia  Hosp Santa Izabel   0003832
+ 32  40      Hosp Santo Antonio Obras Sociais Irmã Dulce    2802104
+ 32  41      Hosp Universitário Prof. Edgard Santos         0003816
+ 32  42      Hospital do Subúrbio                           6595197
+     43    Vitória da Conquista                             -------
+ 43  44      Hospital Geral de Vitória da Conquista         2402076
+     45  C E A R A                                          -------
+     46    Barbalha                                         -------
+ 46  47      Hosp Maternidade São Vicente de Paulo-Barbalha 2564211
+     48    Fortaleza                                        -------
+ 48  49      Hospital Geral de Fortaleza                    2497654
+ 48  50      Hospital Geral Dr. César Cals                  2499363
+ 48  51      Hospital Infantil Albert Sabin                 2563681
+ 48  52      Hospital São José                              2561417
+ 48  53      Hospital Universitário Walter Cantídio         2561492
+ 48  54      Instituto Dr. José Frota                       2529149
+ 48  55      Maternidade Escola Assis Chateaubriand-MEAC    2481286
+     56    Sobral                                           -------
+ 56  57      Santa Casa de Misericórdia de Sobral           3021114
+     58  D I S T R I T O - F E D E R A L                    -------
+     59    Brasilia                                         -------
+ 59  60      Hospital de Base de Brasília		    0010456
+ 59  61      Hospital Regional da Asa Norte - HRAN*         0010464
+ 59  62      Hospital Regional da Asa Sul - HRS             0010537
+     63    Santa Maria                                      -------
+ 63  64      Hospital Regional de Santa Maria - HRSM        5717515
+     65  E S P I R I T O   S A N T O                        -------
+     66    São Matheus					    -------
+ 66  67      Hospital Dr. Roberto Arnizaut Silvares	    2550687
+     68    Vitória                                          -------
+ 68  69      Hospital Infantil Nossa Senhora da Glória      0011800
+ 68  70      Hosp Univers Cassiano Antônio Moraes - Hucam   4044916
+ 68  71      Santa Casa de Misericórdia de Vitória          0011746
+     72  G O I A S                                          -------
+     73    Anápolis                                         -------
+ 73  74      Hospital Municipal Jamel Cecílio               2361744
+     75    Aparecida de Goiânia                             -------
+ 75  76      HosP Urgências de Aparecida de Goiânia/HUAPA   5419662
+     77    Goiânia                                          -------
+ 77  78      Hosp Clínicas da Univ Federal de Goiás         2338424
+ 77  79      Hosp de Doenças Tropicais-HDT                  2506661
+ 77  80      US Urg Goiania Dr. Valdemiro da Cruz/HUGO      2338262
+ 77  81      Hosp Materno Infantil/SES                      2339196
+ 77  82      Santa Casa de Misericórdia de Goiânia          2338351
+ 77  83      Hospital Geral de Goiânia/HGG                  2338734
+     84    Jataí                                            -------
+ 84  85      Centro Médico Munic Serafim de Carvalho/CMMSC  2535556
+     86    Santa Helena de Goiás                            -------
+ 86  87      Hosp de Urgência da Reg Sudoeste/HURSO         6665322
+     88  M A R A N H Ã O                                    -------
+     89    Caxias                                           -------
+ 89  90      Hospital Geral de Caxias                       3388301
+     91    Coroatá                                          -------
+ 91  92      Hosp Macrorregião Alexandre Mamed Trovão       7088302
+     93    Imperatriz                                       -------
+ 93  94      Hosp Regional Materno Infantil de Imperatriz   2452383
+ 93  95      Hospital Municipal de Imperatriz               2456672
+     96    Itapecuru Mirim				    -------
+ 96  97      Hospital Regional Adélia Matos Fonseca         2530236
+     98    Presidente Dutra				    -------
+ 98  99      Hosp Reg de Urg e Emerg de Presidente Dutra    6483089
+    100    São Luis                                         -------
+100 101      Hosp da Criança Dr. Odorico Amaral de Matos    2458799
+100 102      Hosp Urgência-Emer/Clementino Moura-SocorrãoII 2308800
+100 103      Hosp Djalma Marques-Socorrão I                 2308762
+100 104      Hosp Geral Tarquínio Lopes Filho               2646536
+100 105      Hosp Presidente Vargas                         2458292
+100 106      Hosp Universitário (UFMA)                      2726653
+100 107      Hosp Refer Estadual Dr. Carlos Macieira        2464594
+100 108      Complex Hospit Mat Inf do MA – Juvêncio Matos  2702886
+    109    Timon					    -------
+109 110      Hospital Regional Alarico Nunes Pacheco        2452782
+    111  M I N A S   G E R A I S                            -------
+    112    Alfenas                                          -------
+112 113      Hosp Univ Alzira Velano/F Ensino Tecn Alfenas  2171988
+    114    Araxá                                            -------
+114 115      Santa Casa de Misericódia de Araxá             2164620
+    116    Belo Horizonte                                   -------
+116 117      Hosp Clínicas da Univ Federal de MG-UFMG       0027049
+116 118      Hospital Eduardo de Menezes/FHEMIG             2181770
+116 119      Hospital Infantil João Paulo II                0026948
+116 120      Hospital Municipal Odilon Behrens              2192896
+    121    Bom Despacho					    -------
+121 122      Santa Casa de Bom Despacho			    2168707
+    123    Carangola                                        -------
+123 124      Casa de Caridade de Carangola                  2764776
+    125    Contagem					    -------
+125 126      Hospital Municipal de Contagem		    2200473
+    127    Governador Valadares                             -------
+127 128      Hospital Municipal de Governador Valadares     2222043
+    129    Juiz de Fora                                     -------
+129 130      Hosp Univ Juiz de Fora                         2218798
+    131    Montes Claros                                    -------
+131 132      Hosp Univ Clemente de Faria de Montes Claros   2219654
+    133    Passos                                           -------
+133 134      Santa Casa de Misericordia de Passos           2775999
+    135    Patos de Minas                                   -------
+135 136      Hospital Regional Antônio Dias/FHEIMIG         2726726
+    137    Ponte Nova                                       -------
+137 138      Hosp NS Dores/Irmandade Hosp NSenhora Dores    2111640
+    139    Pouso Alegre                                     -------
+139 140      HC Samuel Libânio Pouso Alegre-FES V Sapucaí   2127989
+    141    Teófilo Otoni                                    -------
+141 142      Associação Hospitalar Santa Rosália            2208172
+    143    Uberaba                                          -------
+143 144      Hosp Esc Facul Medicina do Triângulo Mineiro   2206595
+    145    Uberlândia                                       -------
+145 146      Hospital  de Clínicas de Uberlândia-UFU        2146355
+    147    Varginha                                         -------
+147 148      Hosp Bom Pastor/Fund Hosp Muno de Varginha     2761092
+    149  M A T O  G R O S S O  D O  S U L                   -------
+    150    Campo Grande                                     -------
+150 151      Ass Benef Campo Grande-Santa Casa do Estado MS 0009717
+150 152      Hosp Regional de Mato Grosso do Sul - HRMS     0009725
+150 153      Hosp Univ Maria Ap Pedrossian-Fund Univ Fed MS 0009709
+    154  M A T O  G R O S S O                               -------
+    155    Cuiabá                                           -------
+155 156      Hosp e Pronto Socorro Municipal de Cuiabá      2495015
+155 157      Hosp Univ Julio Muller - Fund Univ Fed MT      2655411
+    158    Varzea Grande                                    -------
+158 159      Hosp/PS Municipal/FUSVAG–FSaúde Várzea Grande  2391635
+    160  P A R A                                            -------
+    161    Altamira                                         -------
+161 162      Hospital Municipal São Rafael-Altamira         2330830
+    163    Belém                                            -------
+163 164      Hosp Fund Santa Casa de Misericórdia do Pará   2752700
+163 165      Hosp Universitário João de Barros Barreto      2332981
+163 166      Hospital de Clínicas Gaspar Viana              2333031
+    167    Bragança                                         -------
+167 168      Hosp Santo Antônio Maria de Zaccaria           2678403
+    169    Cametá					    -------
+169 170      Hospital Regional de Cametá		    2313367
+    171    Conceição do Araguaia			    -------
+171 172      Hospital Regional de Conceição do Araguaia     2328992
+    173    Oriximiná					    -------
+173 174      Hospital Municipal de Oriximiná		    2331969
+    175    Santarém                                         -------
+175 176      Hospital Municipal de Santarém                 2329905
+    177    Tucurui                                          -------
+177 178      Hospital Regional  de Tucurui                  2621614
+    179  P A R A I B A                                      -------
+    180    Campina Grande                                   -------
+180 181      Hosp Reg Urgência e Emerg. de Campina Grande   2362856
+180 182      Hosp Univ Alcides Carneiro-UN Fed Camp Grande  2676060
+    183    João Pessoa                                      -------
+183 184      Complexo Hospitalar Clementino Fraga           2399717
+183 185      Hospital Universitário Lauro Wanderley         2400243
+    186  P E R N A M B U C O                                -------
+    187    Afogados da Ingazeira			    -------
+187 188      Hospital Regional Emília Câmara		    2428385
+    189    Arcoverde					    -------
+189 190      Hospital Regional Rui de Barros Correia	    2551764
+    191    Caruaru					    -------
+191 192      Hospital Regional do Agreste		    2427419
+    193    Garanhuns					    -------
+193 194      Hospital Reginal Dom Moura			    2702983
+    195    GOIANA                                           -------
+195 196      Hospital Regional Belarmino Correia            2711885
+    197    Jaboatão dos Guararapes 			    -------
+197 198      Hospital e Policlínica Jaboatão Prazeres	    2711990
+    199    Limoeiro					    -------
+199 200      Hosp Reginal de Limoeiro José Fernandes Salsa  2712032
+    201    Ouricuri					    -------
+201 202      Hospital Regional Fernando Bezerra		    2712040
+    203    Palmares					    -------
+203 204      Hosp Regional de Palmares Dr. Silvio Magalhães 2428393
+    205    Petrolina					    -------
+205 206      Hospital Dom Malan				    2430711
+    207    Recife                                           -------
+207 208      Hospital Agamenon Magalhães                    0000418
+207 209      Hospital Corrêa Picanço                        0000981
+207 210      Hospital da Restauração                        0000655
+207 211      Hosp das Clínicas- Univ Federal de Pernambuco  0000396
+207 212      Hospital Geral Otávio de Freitas               0000426
+207 213      Hospital Getúlio Vargas                        2802783
+207 214      Hospital Universitário Oswaldo Cruz            0000477
+207 215      Inst Medicina Int Prof Fernando Figueira-IMIP  0000434
+207 216      Hospital Barão de Lucena			    2427427
+207 217      Hospital Geral de Areias			    2711974
+    218    Salgueiro					    -------
+218 219      Hospital Regional Inácio de Sá		    2356287
+    220    Serra Talhada				    -------
+220 221      Hospital Regional Professor Agamenon Magalhães 2348489
+    222    Vitória de Santo Antão			    -------
+222 223      Hospital João Murilo de Oliveira		    2712008
+    224  P I A U I                                          -------
+    225    Bom Jesus					    -------
+225 226      Hospital Regional de Bom Jesus		    2364816
+    227    Floriano					    -------
+227 228      Hospital Regional Tibério Nunes		    2365146
+    229    Parnaíba					    -------
+229 230      Hospital Estadual Dirceu Arcoverde		    8015899
+    231    Picos                                            -------
+231 232      Hospital Regional Justino Luz - Picos          4009622
+    233    Piripiri					    -------
+233 234      Hospital Regional Chagas Rodrigues		    2777746
+    235    Teresina                                         -------
+235 236      Hospital Gétulio Vargas                        2726971
+235 237      Hospital Infantil Lucídio Portella             2323249
+235 238      Inst de Doenças Tropicais Natan Portella Nunes 2323338
+235 239      Maternidade Dona Evangelina Rosa – MDER        2323397
+    240  P A R A N A                                        -------
+    241    Campina Grande do Sul                            -------
+241 242      Hospital Maternidade Angelina Caron            0013633
+    243    Cascavel                                         -------
+243 244      Hospital Universitário do Oeste do Paraná      2738368
+    245    Curitiba                                         -------
+245 246      Hosp de Clínicas - UFPR                        2384299
+245 247      Hosp do Trabalhador - Hospital Mauro Goulart   0015369
+245 248      Hosp Inf Pequeno Príncipe - AHPC-Dr Raul Carn  0015563
+245 249      Hosp Univ Cajuru-Soc Paranaense de Cult HUC    0015407
+245 250      Hosp Universitário Evangelico de Curitiba      0015245
+    251    Foz do Iguaçu                                    -------
+251 252      Hospital Municipal de Foz de Iguaçu            5061989
+    253    Londrina                                         -------
+253 254      Hosp Univ Londrina-H Univ Reg Norte do Parana  2781859
+    255    Maringá                                          -------
+255 256      Hospital Universitário Regional de Maringá-HUM 2587335
+    257  R I O  D E  J A N E I R O                          -------
+    258    Angra dos Reis				    -------
+258 259      Hosp Geral de Japuíba Hosp Jorge Elias Miguel  7354746
+    260    Campos dos Goytacazes                            -------
+260 261      F Dr.João Barcelo Martins/H Ferreira Machado   2287579
+    262    Itaperuna					    -------
+262 263      Hospital São José do Avaí			    2278855
+    264    Niterói					    -------
+264 265      Hospital Universitário Antônio Pedro	    0012505
+    266    Nova Iguaçu					    -------
+266 267      Hospital Geral de Nova Iguaçu		    2798662
+    268    Nova Friburgo			 	    -------
+268 269      Hospital Municipal Raul Sertã		    2272784
+    270    Rio das Ostras				    -------
+270 271      Hospital Municipal de Rio das Ostras 	    6069134
+    272    Rio de janeiro                                   -------
+272 273      Centro Pesq Hosp Evandro Chagas/Fund Osv Cruz  2288338
+272 274      Hospital dos Servidores do Estado              2269988
+272 275      Hosp Geral de Bonsucesso                       2269880
+272 276      Hosp Municipal Miguel Couto                    2270269
+272 277      Hosp Municipal Souza Aguiar/SMS                2280183
+272 278      Hosp Univ Clementino Fraga Filho-Univ Fed/RJ   2280167
+    279    Vassouras					    -------
+279 280      Hospital Universitário Sul Fluminense	    2273748
+    281    Volta Redonda			 	    -------
+281 282      Hospital São João Batista			    0025135
+    283  R I O   G R A N D E   D O   N O R T E              -------
+    284    Natal                                            -------
+284 285      Hospital Giselda Trigueiro                     4013484
+284 286      Hospital Monsenhor Walfredo Gurgel             2653923
+284 287      Hospital Universitário Onofre Lopes            2653982
+    288  R O N D O N I A                                    -------
+    289    Porto Velho                                      -------
+289 290      Centro de Medicina Tropical de Rondônia        2493853
+289 291      Hospital de Base Dr Ary Pinheiro               4001303
+    292  R O R A I M A                                      -------
+    293    Boa Vista                                        -------
+293 294      Hospital Geral de Roraima                      2319659
+    295  R I O   G R A N D E   D O   S U L                  -------
+    296    Canoas                                           -------
+296 297      Ass Benef Canoas/Hosp Nossa Senhora das Graças 2232014
+    298    Caxias do Sul                                    -------
+298 299      Pio Sod Damas de Carid Mant do Hosp NS Pompéia 2223546
+    300    Passo Fundo                                      -------
+300 301      Ass Hosp Benef Sao Vicente de Paulo            2246988
+    302    Pelotas                                          -------
+302 303      Santa Casa de Misericórdia de Pelotas          2253054
+    304    Porto Alegre                                     -------
+304 305      Hospital Nossa Senhora da Conceição            2237571
+304 306      Hospital São Lucas da PUCRS                    2262568
+    307    Rio Grande                                       -------
+307 308      Ass caridade Sta Casa Miser de Rio Grande      2232995
+    309    Santa Cruz do Sul                                -------
+309 310      Ass Pró-Ensino Sta Cruz do Sul/Hosp Santa Cruz 2254964
+    311    Santa Maria                                      -------
+311 312      Hospital Universitário de Santa Maria-HUSM     2244306
+    313    Santa Rosa                                       -------
+313 314      Ass Hosp Caridade Santa Rosa/Hosp Vida Saúde   2254611
+    315    Uruguaiana                                       -------
+315 316      Santa Casa de Misericórdia de Uruguaiana       2248190
+    317  S A N T A   C A T A R I N A                        -------
+    318    Blumenau                                         -------
+318 319      Hospital Santa Isabel                          2558246
+    320    Chapecó                                          -------
+320 321      Hosp Reg Leonir Vargas Ferreira-Hosp Reg Oeste 2537788
+    322    Florianopolis                                    -------
+322 323      Hospital Infantil Joana de Gusmão              2691868
+322 324      Hospital Nereu Ramos                           2664879
+    325    Joinville                                        -------
+325 326      Hospital  Regional Hans Ditter Schmidt         2436450
+    327    Tubarao                                          -------
+327 328      Soc Divina-Providencia - Hosp N Sra  Conceicao 2491710
+    329  S E R G I P E                                      -------
+    330    Aracaju                                          -------
+330 331      Hospital Governador João Alves Filho           2816210
+330 332      Universidade Federal de Sergipe                0002534
+    333  S A O   P A U L O                                  -------
+    334    Araçatuba                                        -------
+334 335      Sta Casa Miseric Araçatuba. Hosp Sag Cor Jesus 2078775
+    336    Assis                                            -------
+336 337      Hospital Regional de Assis                     2083094
+    338    Barretos                                         -------
+338 339      Santa Casa de Barretos                         2092611
+    340    Bauru                                            -------
+340 341      Hospital Estadual Bauru                        2790602
+    342    Botucatu                                         -------
+342 343      Hosp Clínicas Facul Medicina de Botucatu-UNESP 2748223
+    344    Campinas                                         -------
+344 345      Hospital das Clínicas-UNICAMP                  2079798
+344 346      Hospital e Maternidade Celso Pierro            2082128
+344 347      Hospital Municipal Mário Gatti                 2081490
+    348    Caraguatatuba				    -------
+348 349      Casa de Saúde Stella Maris			    2082926
+    350    Fernandópolis				    -------
+350 351      Irm da Santa Casa de Miser de Fernandópolis    2093324
+    352    Ferraz de Vasconcelos                            -------
+352 353      Hosp Reg Ferraz de Vasc Dr Osiris Flor Coelho  2080079
+    354    Franca                                           -------
+354 355      Fund civil Csa Mis de Franca/Sta Casa M Franca 2705982
+    356    Francisco Morato                                 -------
+356 357      Hospital Estadual Prof. Carlos da Silva Lacaz  3028399
+    358    Guarulhos                                        -------
+358 359      Hospital Geral de Guarulhos                    2080338
+    360    Itapeva                                          -------
+360 361      Santa Casa de Misericórdia de Itapeva          2027186
+    362    Limeira                                          -------
+362 363      Irmandade Sta Casa de Misericordia de Limeira  2081458
+    364    Marilia                                          -------
+364 365      Hosp das Clín da Faculd de Medicina de Marília 2025507
+    366    Mauá                                             -------
+366 367      Hosp Clín Dr. Radames Nardini - Pref Mun Mauá  5661099
+    368    Mococa                                           -------
+368 369      Irmandade da St Casa Misericordia de Mococa    2705222
+    370    Osasco                                           -------
+370 371      Hosp Mun Antonio Giglio - Hosp Mun Cent Osasco 0008028
+    372    Pariquera-Acu                                    -------
+372 373      Hospital Regional Vale do Ribeira              2077434
+    374    Ribeirão Preto                                   -------
+374 375      Hosp Clínicas Fac Med Ribeirão Preto-FMRP USP  2082187
+    376    Santo André                                      -------
+376 377      Centro Hospitalar do Municipio de Santo André  0008923
+    378    Santos                                           -------
+378 379      Hospital Guilherme Álvaro                      2079720
+    380    São Carlos                                       -------
+380 381      Irmandade Santa Casa de Miserirc São Carlos    2080931
+    382    São José do Rio Preto                            -------
+382 383      Hosp Base-Fund Facul Reg Med S José Rio Preto  2077396
+    384    São José dos Campos                              -------
+384 385      Hosp Mun Dr. José de Carvalho Florence         0009628
+    386    São Paulo                                        -------
+386 387      Conjunto Hospitalar do Mandaqui                2077574
+386 388      Hospital das Clínicas FMUSP                    2078015
+386 389      Hospital Infantil Cândido Fontoura             2088517
+386 390      Hospital Mun de Tatuapé-Cármino Caricchio      2080346
+386 391      Hospital Municipal Infantil Menino de Jesus    2078325
+386 392      Hospital Regional Sul                          2091313
+386 393      Hospital Santa Marcelina                       2077477
+386 394      Hospital São Paulo-UNIFESP                     2077485
+386 395      Instituto de Infectologia Emílio Ribas         2028840
+386 396      Irmandade da Santa Casa de Misericórdia de SP  2688689
+    397    Sorocaba                                         -------
+397 398      Conjunto Hospitalar de Sorocaba                2081695
+    399    Sumaré                                           -------
+399 400      Hospital Estadual Sumaré                       2083981
+    401    Taboão da Serra                                  -------
+401 402      Hospital Geral Pirajussara                     2079828
+    403    Taubate                                          -------
+403 404      Hospital Escola da Universidade de Taubaté     2749319
+    405  T O C A N T I N S                                  -------
+    406    Araguaína                                        -------
+406 407      Hospital Regional de Araguaina                 2600536
+    408    Palmas                                           -------
+408 409      Hosp de Refer de Palmas Dr. Francisco Ayres    2786117
+

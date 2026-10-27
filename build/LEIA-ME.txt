@@ -1,0 +1,67 @@
+ANOTADOR SINAN — versão @VERSAO@
+================================
+
+Código-fonte, versões anteriores, registro de mudanças e relato de problemas:
+https://github.com/cgarciafilho/anotador-sinan (licença MIT; ver LICENSE.txt).
+
+O QUE FAZ
+- Lê o arquivo DBF exportado do Sinan NET (ex.: TUBENET.DBF, SIFGENET.DBF, HANSNET.DBF) e grava, na mesma pasta,
+  <nome>_anotado.xlsx com:
+    aba "dados": cada campo codificado seguido do campo <campo>_rotulo com o significado do código, segundo as
+                 tabelas oficiais do TabWin (.def/.cnv do DATASUS). NU_IDADE_N ganha também NU_IDADE_N_anos (idade em anos)
+                 e NU_IDADE_N_rotulo (faixa etária). Municípios (ID_MUNICIP, ID_MN_RESI) recebem o nome do município.
+                 Datas saem como data do Excel. O cabeçalho traz o nome por extenso e o nome do campo entre parênteses,
+                 ex.: "Sexo (CS_SEXO)", "Sexo — rótulo (CS_SEXO_rotulo)".
+    aba "campos": uma linha por coluna: nome por extenso, campo do DBF, tipo, de onde veio o nome (ficha de notificação,
+                 .def do TabWin, dicionário CSV), rótulo do TabWin e tabela de rótulos usada.
+    aba "dicionario": todas as tabelas usadas (campo, tabela, códigos, rótulo).
+    aba "duplicidades": pares de notificações que podem ser da mesma pessoa, um par por linha, com a chave que os ligou
+                 (padrao = primeiro e último nome + nascimento + sexo, a mesma do relatório de duplicidade do Sinan NET;
+                 nome_mae = nome + nome da mãe; nome_nasc1 = nome + sexo com a data de nascimento diferente em dia, mês ou
+                 ano; nasc_nome_sim = nascimento + sexo com nome parecido, erro de digitação), o tipo sugerido (duplicidade verdadeira,
+                 duplo registro por transferência, recidiva/reingresso, gestação diferente, homônimo...) com a regra do manual que o sustenta, se o par já foi
+                 julgado no Sinan, os dias entre os eventos, a ficha que a regra do MS manda manter e os campos dos dois
+                 registros lado a lado. A regra muda conforme o agravo (tuberculose, hanseníase, sífilis em gestante, aids,
+                 agravos agudos).
+    aba "duplicidades_resumo": versão curta do mesmo par (ADS, tipo sugerido, paciente, as duas notificações com data,
+                 unidade e município, ficha sugerida) com as colunas vazias "decisao_da_equipe" e "observacao" para a equipe
+                 preencher. As duas abas começam pela ADS (regionalização da SESA por município) e vêm ordenadas por ADS.
+- Os nomes por extenso dos campos da ficha de notificação (1 a 30) vêm da própria ficha; os dos campos específicos do agravo
+  vêm do TabWin e são abreviados ("Situação Encerra."). Para nomes completos, coloque na pasta app\dicionarios os CSV de
+  dicionário (colunas variavel, nome_campo) extraídos dos dicionários de dados do DATASUS.
+- Grava também <nome>_anotado.log.txt com o que foi feito, os campos sem tabela disponível, avisos e a contagem das
+  duplicidades (pares por chave e por tipo sugerido, registros que nenhuma chave alcança por falta de nome, nascimento ou mãe).
+- Código que não está na tabela aparece como "[código] sem rótulo"; vazio aparece como "Ign/Branco" (ou o rótulo de
+  branco da própria tabela, quando existe).
+- Acima de 1.048.575 registros (limite do Excel) a saída é dividida em um xlsx por ano de notificação; as abas de
+  duplicidades vão inteiras em cada arquivo, porque um par pode juntar anos diferentes.
+
+O QUE NÃO FAZ
+- Não altera, apaga nem mescla registros. Não envia nada pela rede. Não grava fora da pasta do DBF.
+- ATENÇÃO: o xlsx copia TODOS os campos do DBF, inclusive nome, nome da mãe, nascimento e endereço. Ele é tão nominal quanto o
+  DBF e deve ficar no mesmo lugar protegido; não envie por e-mail nem grave em pasta compartilhada.
+- Não decide duplicidade: o tipo e a ficha a manter são sugestões para revisão humana. A exclusão ou vinculação é feita no
+  Sinan por quem tem autorização. As abas de duplicidades também trazem nome do paciente e valem as mesmas regras de sigilo.
+- Ainda não preenche modelos de planilha dinâmica (próxima etapa).
+- Campos cujo .cnv não veio com o TabWin (ex.: vários da dengue) ficam sem rótulo; o log diz quais.
+- Unidade de saúde (CNES) ganha o nome atual do CNES público (unidanet.csv, 640 mil unidades, setembro de 2026) e, para
+  unidades desativadas, o nome das tabelas do TabWin de 2021; ocupação (CBO), regional, país e distrito vêm das tabelas do
+  TabWin. Bairro e agravo ficam sem nome (as tabelas do DATASUS vêm vazias ou sem nomes). Unidade que não está em nenhuma
+  tabela sai "[código] sem rótulo"; o log conta quantas.
+
+COMO USAR
+1. Descompacte este zip em qualquer pasta (ex.: Documentos\anotador). Não precisa instalar nada nem ser administrador.
+2. Arraste um ou mais arquivos .DBF do Sinan NET (C:\SinanNet\BaseDBF\) sobre anotar.bat.
+3. Aguarde a janela terminar. O xlsx e o .log.txt ficam ao lado de cada DBF.
+4. Se algo falhar, envie o arquivo <nome>_anotado.log.txt (ele não contém dados de pacientes, só nomes de campos e contagens).
+
+Se o Windows perguntar sobre "aplicativo não reconhecido", escolha "Mais informações" > "Executar assim mesmo": o pacote
+é só Python (python.org) com as bibliotecas pandas, openpyxl e dbfread, sem instalação.
+
+CONTEÚDO
+  anotar.bat            — o programa (arraste os DBF sobre ele)
+  app\sinan_anotador\   — código fonte (Python)
+  app\tab_sinannet\     — tabelas .def/.cnv do TabWin (DATASUS) e unidanet.csv (CNES)
+  app\regionalizacao_sesa_sr_ads.csv — município → ADS e superintendência regional (SESA-CE)
+  python\               — Python 3.13 "embeddable" e bibliotecas
+  LICENSE.txt           — licença MIT do anotador (as tabelas do DATASUS e do CNES são dados públicos do SUS)

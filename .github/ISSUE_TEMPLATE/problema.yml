@@ -1,0 +1,61 @@
+name: Problema ao rodar
+description: O programa deu erro, não terminou, ou o xlsx saiu com algo errado.
+title: "[problema] "
+labels: ["problema"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **SIGILO: nunca anexe nem cole o DBF, o xlsx, nem trechos deles.** São dados nominais de pacientes.
+        O `<nome>_anotado.log.txt` pode ser anexado: ele só tem nomes de campos, contagens e avisos, sem dados de pessoas.
+        Se precisar mostrar um valor que deu errado, troque nomes, datas e números de notificação por exemplos inventados.
+        Issue com dado de paciente será apagada, não respondida.
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do anotador
+      description: Está na primeira linha do `.log.txt` ("anotador SINAN 0.2.0 — ...") e no nome do zip.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: agravo
+    attributes:
+      label: Arquivo do Sinan NET
+      description: Qual DBF foi arrastado sobre o anotar.bat (sem anexar).
+      options:
+        - TUBENET (tuberculose)
+        - SIFGENET (sífilis em gestante)
+        - SIFCNET (sífilis adquirida)
+        - SIFINET (sífilis congênita)
+        - HANSNET (hanseníase)
+        - LEIVNET / LTANET (leishmanioses)
+        - DENGNET / CHIKNET / ZIKANET (arboviroses)
+        - AIDSANET / AIDSCNET / HIVGENET
+        - outro (dizer qual abaixo)
+    validations:
+      required: true
+  - type: textarea
+    id: oquehouve
+    attributes:
+      label: O que aconteceu
+      description: O que você fez, o que esperava, o que saiu. Se a janela mostrou uma mensagem de erro, copie o texto dela.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Trecho do .log.txt
+      description: Cole aqui o fim do `<nome>_anotado.log.txt` (as últimas 30 linhas bastam) ou anexe o arquivo inteiro.
+      render: text
+  - type: input
+    id: tamanho
+    attributes:
+      label: Tamanho da base
+      description: Número de registros, se souber (o log diz "Registros lidos").
+      placeholder: "17.201 registros"
+  - type: input
+    id: windows
+    attributes:
+      label: Windows e Excel
+      placeholder: "Windows 10, Excel 2016"

@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "Se usar este programa em trabalho publicado, cite-o como abaixo (ou pelo DOI da versão no Zenodo, quando houver)."
+type: software
+title: "anotador SINAN"
+abstract: >-
+  Programa que anota o DBF exportado do Sinan NET com os rótulos oficiais do TabWin (código e rótulo lado a lado,
+  em xlsx pronto para planilha dinâmica) e lista duplicidades suspeitas, com a regra do manual que as sustenta, para
+  revisão humana. Roda no Windows sem instalação (Python embutido). Não altera, apaga nem mescla registros.
+authors:
+  - family-names: Garcia
+    given-names: Carlos
+    name-suffix: Filho
+version: 0.2.0
+date-released: 2026-10-26
+license: MIT
+repository-code: "https://github.com/cgarciafilho/anotador-sinan"
+keywords:
+  - Sinan
+  - Sinan NET
+  - vigilância epidemiológica
+  - TabWin
+  - DBF
+  - duplicidades
+  - saúde pública
+  - Brasil

@@ -1,0 +1,35 @@
+name: Sugestão ou dúvida
+description: Pedido de função, rótulo ou coluna que falta, regra de duplicidade a rever, dúvida de uso.
+title: "[sugestão] "
+labels: ["sugestão"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **SIGILO: não cole nem anexe dados de pacientes** (DBF, xlsx, nomes, datas de nascimento, números de notificação).
+        Para exemplos, invente os valores.
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: Tipo
+      options:
+        - Campo sem rótulo que deveria ter (dizer o campo e o agravo)
+        - Rótulo ou nome por extenso errado
+        - Regra de duplicidade (chave, janela de dias, tipo sugerido, ficha a manter)
+        - Coluna ou aba nova
+        - Dúvida de uso
+        - Outro
+    validations:
+      required: true
+  - type: textarea
+    id: descricao
+    attributes:
+      label: Descrição
+      description: O que falta ou está errado, e o que você esperava. Se for regra de duplicidade, cite o manual ou a nota técnica que a sustenta, quando houver.
+    validations:
+      required: true
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do anotador
+      placeholder: "0.2.0"

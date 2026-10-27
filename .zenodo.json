@@ -1,0 +1,12 @@
+{
+  "title": "anotador SINAN",
+  "upload_type": "software",
+  "description": "<p>Programa que anota o DBF exportado do Sinan NET com os rótulos oficiais do TabWin (código e rótulo lado a lado, em xlsx pronto para planilha dinâmica) e lista duplicidades suspeitas, com a regra do manual que as sustenta, para revisão humana. Roda no Windows sem instalação (Python embutido). Não altera, apaga nem mescla registros.</p><p>O pacote executável para Windows (zip) de cada versão está na página de releases do GitHub; este depósito guarda o código-fonte.</p>",
+  "creators": [
+    {"name": "Garcia Filho, Carlos"}
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "language": "por",
+  "keywords": ["Sinan", "Sinan NET", "vigilância epidemiológica", "TabWin", "DBF", "duplicidades", "saúde pública", "Brasil"]
+}

@@ -1,0 +1,14 @@
+__pycache__/
+.pytest_cache/
+.venv/
+tmp/
+
+# build outputs and downloads (the zip is published as a GitHub release, not committed)
+build/dist/
+build/wheels/
+build/*.zip
+build/python-*.zip
+build/build.log
+
+# the 272 MB UNIDTOTAL.DBF of TAB_SINANNET does not fit GitHub's file limit
+tabelas/tab_sinannet/UNIDTOTAL.DBF
