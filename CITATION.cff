@@ -10,6 +10,7 @@ authors:
   - family-names: Garcia
     given-names: Carlos
     name-suffix: Filho
+    orcid: "https://orcid.org/0000-0002-0345-6033"
 version: 0.2.0
 date-released: 2026-10-27
 license: MIT
