@@ -4,7 +4,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); numeraç
 `MAIOR.MENOR.CORREÇÃO`. Enquanto a versão for `0.x`, a forma das abas e das colunas ainda pode mudar entre versões menores.
 Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para Windows e sua soma sha256.
 
-## [0.2.0] — 2026-10-26
+## [0.2.0] — 2026-10-27
 
 Primeira versão pública. Em relação à 0.1.0 (interna):
 
