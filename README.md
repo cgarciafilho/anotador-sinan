@@ -56,9 +56,14 @@ publicada junto. Enquanto a versão for `0.x`, a forma das abas e das colunas po
 
 ## Como citar
 
-Veja [`CITATION.cff`](CITATION.cff) (o GitHub mostra "Cite this repository" na barra lateral). Quando o repositório
-estiver ligado ao Zenodo, cada release ganha um DOI; o DOI de conceito, que aponta sempre para a versão mais recente,
-será anotado aqui.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23715002.svg)](https://doi.org/10.5281/zenodo.23715002)
+
+Cada release recebe um DOI no Zenodo, que arquiva o código-fonte da versão. A v0.2.0 tem o DOI
+[10.5281/zenodo.23715002](https://doi.org/10.5281/zenodo.23715002). A página do registro no Zenodo traz também o DOI
+de conceito, que resolve sempre para a versão mais recente, em "Cite all versions". Veja [`CITATION.cff`](CITATION.cff)
+(o GitHub mostra "Cite this repository" na barra lateral). Forma sugerida:
+
+> Garcia Filho, C. (2026). *anotador SINAN* (v0.2.0) [software]. Zenodo. https://doi.org/10.5281/zenodo.23715002
 
 ## Método e documentação
 

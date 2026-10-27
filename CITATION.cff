@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "Se usar este programa em trabalho publicado, cite-o como abaixo (ou pelo DOI da versão no Zenodo, quando houver)."
+message: "Se usar este programa em trabalho publicado, cite-o pelo DOI da versão usada (abaixo) ou pelo DOI de conceito do Zenodo."
 type: software
 title: "anotador SINAN"
 abstract: >-
@@ -13,6 +13,11 @@ authors:
 version: 0.2.0
 date-released: 2026-10-26
 license: MIT
+doi: 10.5281/zenodo.23715002
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23715002
+    description: "DOI desta versão (v0.2.0) no Zenodo"
 repository-code: "https://github.com/cgarciafilho/anotador-sinan"
 keywords:
   - Sinan
