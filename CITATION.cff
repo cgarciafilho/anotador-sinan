@@ -18,6 +18,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23715002
     description: "DOI desta versão (v0.2.0) no Zenodo"
+  - type: doi
+    value: 10.5281/zenodo.23715001
+    description: "DOI de conceito (todas as versões) no Zenodo"
 repository-code: "https://github.com/cgarciafilho/anotador-sinan"
 keywords:
   - Sinan
