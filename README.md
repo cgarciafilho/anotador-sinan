@@ -62,10 +62,11 @@ publicada junto. Enquanto a versão for `0.x`, a forma das abas e das colunas po
 Cada release recebe um DOI no Zenodo, que arquiva o código-fonte da versão. O DOI de conceito
 [10.5281/zenodo.23715001](https://doi.org/10.5281/zenodo.23715001) representa todas as versões e resolve sempre para a
 mais recente; use-o para citar o programa em geral. Para reprodutibilidade, cite o DOI da versão usada: a v0.2.0 é
-[10.5281/zenodo.23715002](https://doi.org/10.5281/zenodo.23715002). Veja [`CITATION.cff`](CITATION.cff)
-(o GitHub mostra "Cite this repository" na barra lateral). Forma sugerida:
+[10.5281/zenodo.23715002](https://doi.org/10.5281/zenodo.23715002); o da v0.3.0 é anotado aqui e em
+[`CITATION.cff`](CITATION.cff) assim que o Zenodo o emitir, na publicação do release (o GitHub mostra "Cite this
+repository" na barra lateral). Forma sugerida, com o DOI da versão quando houver:
 
-> Garcia Filho, C. (2026). *anotador SINAN* (v0.2.0) [software]. Zenodo. https://doi.org/10.5281/zenodo.23715002
+> Garcia Filho, C. (2026). *anotador SINAN* (v0.3.0) [software]. Zenodo. https://doi.org/10.5281/zenodo.23715001
 
 ## Método e documentação
 

@@ -4,7 +4,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); numeraç
 `MAIOR.MENOR.CORREÇÃO`. Enquanto a versão for `0.x`, a forma das abas e das colunas ainda pode mudar entre versões menores.
 Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para Windows e sua soma sha256.
 
-## [Não publicado]
+## [0.3.0] — 2026-10-28
 
 ### Adicionado
 - `docs/MANUAL.md`, manual para quem usa o programa: como rodar, como ler cada aba e, regra por regra, como os pares de

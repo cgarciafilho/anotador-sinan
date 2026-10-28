@@ -14,8 +14,8 @@ body:
     id: versao
     attributes:
       label: Versão do anotador
-      description: Está na primeira linha do `.log.txt` ("anotador SINAN 0.2.0 — ...") e no nome do zip.
-      placeholder: "0.2.0"
+      description: Está na primeira linha do `.log.txt` ("anotador SINAN 0.3.0 — ...") e no nome do zip.
+      placeholder: "0.3.0"
     validations:
       required: true
   - type: dropdown
