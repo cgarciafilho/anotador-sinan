@@ -492,3 +492,29 @@ dicionários, alias), `test_duplicates.py` (faixas nos dez limites, data implaus
 2020–2024, aviso de nome em branco); `test_manual.py` obriga os rótulos novos a constar do manual. Ponta a ponta com
 HANSNET, LEISHNET e MENINNET sintéticos: reconhecidos pelo nome; log com as notas de ESQ_INI_N/ESQ_ATU_N, DOSE_RECEB e a
 linha das tabelas ausentes; UNIDINVEST lida para ATE_HOSP_1. Não rodado nas bases reais.
+
+### 2026-10-28 — Varredura das tabelas ausentes e primeiro pacote do TabWin da SESA (TAB_SINANONLINE.zip)
+Contexto: depois dos achados de meningite e hanseníase, o usuário pediu a lista completa do que falta para trazer de uma vez.
+`scripts/tabelas_ausentes.py` (mesma lógica do `build_plan`: só linhas de categoria, sem agrupamentos nem tabelas de
+município) achou 254 `.cnv` distintas ausentes, em 53 dos 58 `.def`, e 2 `.dbf` externos (`localidade.dbf`, `unidtotal.dbf`).
+As mais citadas: `CURAOBIT.CNV` (17 `.def`), `sim_naoap.cnv` (13), `CONFDESCA.CNV` e `Reagente.cnv` (10). O pacote
+`TAB_SINANNET.zip` de março de 2021 que originou `tabelas/tab_sinannet/` tinha 134 `.cnv`, menos da metade do que seus
+próprios `.def` citam.
+Primeiro pacote recebido (via Google Drive, pasta Claude_Temporarios): `TAB_SINANONLINE.zip`, 244 KB, 72 `.cnv` e 3 `.def`
+(dengue, dengue online 3.0, chikungunya), do TabWin instalado na SESA-CE. Cruzamento: 9 das 254 ausentes estão nele, todas
+de dengue/chik; copiadas com o nome do zip. Dos 75 arquivos, 25 são idênticos aos do repositório e 31 diferem: os 3 `.def`
+por 1 a 4 bytes de espaço; 21 `Munic*.cnv` em que o repositório tem o mesmo número de categorias ou mais (BA 420 vs 418,
+CE 187 vs 185, BR 5657 vs 5658 com os mesmos códigos): o repositório é igual ou mais novo; `NHE.cnv`/`NHEUNIDADE.cnv` com o
+repositório maior (409 vs 326, 233 vs 190); `Escolarnet.cnv` igual em categorias, o zip só acrescenta códigos sem zero à
+esquerda (` 9`, ` 0`), que o parser já trata; `Confdesc.cnv` com linha de branco `,9` no zip e `,0-9` no repositório.
+Decisão: nenhum arquivo existente foi substituído; só os 9 novos entraram. Alternativa descartada: adotar o pacote da SESA
+inteiro, porque é mais antigo nas tabelas de município.
+Achado derivado: `DengueNET.def` lista para `CRITERIO` duas tabelas, "Conf.Desc ate2010" (`CONFDESC.CNV`: 1 Laboratorial,
+2 Clínico-epidemiológico) e "Conf.Desc pos2010" (`CONFDESCDENG2011.CNV`: acrescenta 3 Em investigação); a regra "primeira
+tabela" escolhia a antiga para a base inteira. Decisão: `TABLE_SWITCH` por `NU_ANO` (1990–2010 → antiga; demais → 2011),
+mesmo mecanismo do `DOSE_RECEB`. Com a antiga, código 3 cai na linha de branco `0-9` e sai "Ign/Branco"; é o que a tabela
+oficial diz para aquele ano, e o teste fixa esse comportamento. Dengue continua sem `Evideng.cnv` e `graufhd.cnv` (campos da
+ficha antiga de FHD).
+O segundo pacote (`TAB_SINANNET.zip` da SESA, 9,4 MB, sem os `.dbf` grandes) não pôde ser lido: o conector do Drive não
+entrega arquivo desse tamanho e o proxy do ambiente bloqueia `drive.google.com`; o upload direto no chat e o Remote Control
+para o computador do usuário também não funcionaram nesta sessão. Pendente.

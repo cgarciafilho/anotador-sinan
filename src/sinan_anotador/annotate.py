@@ -58,9 +58,21 @@ KNOWN_DBF_PREFIXES = {
 # fields whose .def lists one category table per value of another field: DOSE_RECEB (doses received) is read against
 # NUDOSEPB.CNV for paucibacillary (CLASSOPERA 1: "6 doses" is the full scheme) and NUDOSEMB.CNV for multibacillary
 # (CLASSOPERA 2: 12 doses); any other classification gets the plain count (NUDOSES.CNV). Codes: Classop.cnv.
+# Dengue and chikungunya (.def lines "Conf.Desc ate2010" / "Conf.Desc pos2010"): the confirmation criterion changed codes
+# with the 2011 form, so CRITERIO follows the notification year (NU_ANO): CONFDESC.CNV up to 2010, CONFDESCDENG2011.CNV after.
 TABLE_SWITCH: dict[str, tuple[str, dict[str, str], str]] = {
     "DOSE_RECEB": ("CLASSOPERA", {"1": "NUDOSEPB.CNV", "2": "NUDOSEMB.CNV"}, "NUDOSES.CNV"),
+    "CRITERIO": ("NU_ANO", {str(y): "CONFDESC.CNV" for y in range(1990, 2011)}, "CONFDESCDENG2011.CNV"),
 }
+
+
+def _code_run(codes: list[str]) -> str:
+    """'1' / '1, 2' / '1990–2010' (consecutive integers collapse into a range) for log notes."""
+    if all(c.isdigit() for c in codes) and len(codes) > 2:
+        ns = sorted(int(c) for c in codes)
+        if ns == list(range(ns[0], ns[-1] + 1)):
+            return f"{ns[0]}–{ns[-1]}"
+    return ", ".join(codes)
 
 
 @dataclass
@@ -323,8 +335,12 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
             dflt = next((cv for _, cv in usable if cv.name.upper() == default), None)
             if sw_field in cols and dflt is not None and all(tables.values()):
                 plans[col] = FieldPlan(col, dflt, ln.start or 1, [], def_label=ln.label, switch=(cols[sw_field], tables))
+                by_table: dict[str, list[str]] = {}
+                for code, t in tables.items():
+                    by_table.setdefault(t.name, []).append(code)
                 notes.append(f"{fld}: tabela escolhida por {sw_field} em cada registro ("
-                             + ", ".join(f"{code} → {t.name}" for code, t in tables.items()) + f"; demais → {dflt.name})")
+                             + ", ".join(f"{_code_run(codes)} → {name}" for name, codes in by_table.items())
+                             + f"; demais → {dflt.name})")
                 continue
         if len(distinct) > 1:
             warnings.append(f"{fld}: mais de uma tabela de categorias no .def ({', '.join(sorted(distinct))}); usada {c.name}")

@@ -154,3 +154,20 @@ def test_dose_recebida_table_switches_on_classopera(tab_dir):
     out, dic = apply_plan(df, plan)
     assert out["DOSE_RECEB_rotulo"].tolist() == ["6 doses", "<12", "12 doses", "maior que 6", "03", "não preenchido/Ign"]
     assert set(dic[dic["campo"] == "DOSE_RECEB"]["tabela"].str.lower()) == {"nudosepb.cnv", "nudosemb.cnv", "nudoses.cnv"}
+
+
+def test_dengue_criterio_table_follows_notification_year(tab_dir):
+    """DengueNET.def lists CONFDESC.CNV ("ate2010") and CONFDESCDENG2011.CNV ("pos2010") for CRITERIO: the table follows
+    NU_ANO in each record; code 3 is 'Em Investigação' only in the 2011 form (tables from TAB_SINANONLINE.zip, 2026-10-28)."""
+    import pandas as pd
+    d = parse_def(tab_dir / "DengueNET.def")
+    cols = ["CRITERIO", "NU_ANO", "CLASSI_FIN"]
+    plan = build_plan(d, cols, {"CRITERIO": "C", "NU_ANO": "C", "CLASSI_FIN": "C"}, tab_dir)
+    fp = plan.fields["CRITERIO"]
+    assert fp.switch is not None and fp.switch[0] == "NU_ANO" and fp.cnv.name.upper() == "CONFDESCDENG2011.CNV"
+    assert any(n.startswith("CRITERIO: tabela escolhida por NU_ANO") and "1990–2010 → " in n for n in plan.notes), plan.notes
+    df = pd.DataFrame({"CRITERIO": ["1", "3", "3", "2"], "NU_ANO": ["2009", "2010", "2024", ""], "CLASSI_FIN": ["1", "10", "11", "12"]})
+    out, _ = apply_plan(df, plan)
+    # 2010: the old table has no code 3 and its blank line covers 0-9, so 3 reads as Ign/Branco; 2024: 'Em Investigação'
+    assert out["CRITERIO_rotulo"].tolist() == ["Laboratórial", "Ign/Branco", "Em Investigação", "Clínico-epidemiológico"]
+    assert out["CLASSI_FIN_rotulo"].tolist() == ["Dengue Clássico", "Dengue", "Dengue com sinais de alarme", "Dengre grave"]
