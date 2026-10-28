@@ -19,6 +19,8 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
   `31 a 90 dias`, `91 a 365 dias`, `mais de 365 dias`) com os dias exatos entre parênteses; o log conta por faixa, não por
   valor (eram 425 linhas no LEISHNET real). Intervalo maior do que o período coberto pela própria base (mais um ano) vira
   `data implausível? … conferir as datas`: erro de digitação numa das datas, não "mesma pessoa".
+- `scripts/tabelas_ausentes.py`: lista as `.cnv` e `.dbf` que os `.def` citam e `tabelas/tab_sinannet/` não tem (lista
+  única com quantos `.def` citam cada uma, e por `.def` com os campos afetados). Em 28/10/2026: 254 tabelas, 53 de 58 `.def`.
 - `AVISO` no log quando `NM_PACIENT` está em branco na metade ou mais dos registros (MENINNET real: 5.902 de 5.902), porque
   sem nome nenhuma chave de duplicidade funciona.
 
