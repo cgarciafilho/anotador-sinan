@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Antes de abrir uma issue
     url: https://github.com/cgarciafilho/anotador-sinan/blob/main/README.md
-    about: "O README e o LEIA-ME.txt dentro do zip descrevem cada aba e cada coluna. Não há suporte por e-mail: tudo passa pelas issues."
+    about: "O manual (docs/MANUAL.md) explica cada aba, cada coluna e as regras de duplicidade. Não há suporte por e-mail: tudo passa pelas issues."

@@ -197,3 +197,44 @@ def test_gestation_labels_in_the_sheet(case):
         assert "trimestres " not in r["tipo_sugerido"]
         stages = f"gestação: {r['CS_GESTANT_rotulo_A'].lower()} / {r['CS_GESTANT_rotulo_B'].lower()})"
         assert r["tipo_sugerido"].endswith(stages), r["tipo_sugerido"]
+
+
+def test_ads_outside_ceara_falls_back_to_sinan_regional_or_blank(tab_dir, tmp_path, monkeypatch):
+    """A base from another state (METODO 2026-10-28): nothing breaks, the ADS column shows the Sinan regional label when
+    ID_REGIONA has a known code, stays empty when the code is unknown or blank (never "Ign/Branco"), the log counts the
+    blank sides, and pairs without ADS sort last."""
+    import synthetic_dups, dbf_writer
+    sp = ["355030", "350950", "354340", "354870", "352590"]            # São Paulo, Campinas, Ribeirão Preto, Santos, Jundiaí
+    regional = {"355030": "1350", "350950": "1350", "354340": "9999", "354870": "", "352590": ""}   # 1350 is in REGIONET; 9999 is not
+    monkeypatch.setattr(synthetic_dups, "MUNS", sp)
+    original = dbf_writer.write_dbf
+
+    def with_regional(path, fields, records, **kw):
+        names = {f[0] for f in fields}
+        for r in records:
+            if "ID_REGIONA" in names:
+                r["ID_REGIONA"] = regional[r["ID_MUNICIP"]]
+            if "ID_RG_RESI" in names:
+                r["ID_RG_RESI"] = regional[r["ID_MN_RESI"]]
+        return original(path, fields, records, **kw)
+    monkeypatch.setattr(synthetic_dups, "write_dbf", with_regional)
+
+    deffile = parse_def(tab_dir / "TuberculNET5_0.def")
+    dbf, truth = synthetic_dups.make_synthetic_dups(deffile, tab_dir, tmp_path / "TUBENET.DBF", "TUBENET", seed=7)
+    ok, files = annotate_file(dbf, tab_dir, None, None, 1_048_575)
+    log = (tmp_path / "TUBENET_anotado.log.txt").read_text(encoding="utf-8")
+    assert ok, log
+    short = read_sheet(files[0], "duplicidades_resumo")
+    full = read_sheet(files[0], "duplicidades")
+    assert len(short) == len(full) == 80                                   # same pairs as a Ceará base
+    values = {r[c] for r in short for c in ("ADS_notificacao_A", "ADS_notificacao_B", "ADS_residencia")}
+    assert "Ign/Branco" not in values and not any(isinstance(v, str) and "sem rótulo" in v for v in values)
+    assert "GVE XXVI SAO JOAO DA BOA VISTA" in values                     # code 1350: the Sinan regional name is used
+    expected = {"355030": "GVE XXVI SAO JOAO DA BOA VISTA", "350950": "GVE XXVI SAO JOAO DA BOA VISTA"}
+    for r in full:
+        assert r["ADS_notificacao_A"] == expected.get(str(r["ID_MUNICIP_A"]))   # unknown (9999) and blank codes -> empty cell
+    missing = sum(r[c] is None for r in full for c in ("ADS_notificacao_A", "ADS_notificacao_B"))
+    assert missing > 0 and f"{missing} lados de par sem ADS" in log
+    ads_a = [r["ADS_notificacao_A"] for r in short]
+    first_none = ads_a.index(None)
+    assert all(v is None for v in ads_a[first_none:])                      # pairs without ADS come last

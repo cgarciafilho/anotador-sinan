@@ -4,6 +4,22 @@ Formato de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); numeraç
 `MAIOR.MENOR.CORREÇÃO`. Enquanto a versão for `0.x`, a forma das abas e das colunas ainda pode mudar entre versões menores.
 Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para Windows e sua soma sha256.
 
+## [Não publicado]
+
+### Adicionado
+- `docs/MANUAL.md`, manual para quem usa o programa: como rodar, como ler cada aba e, regra por regra, como os pares de
+  duplicidade são achados, classificados por agravo e qual ficha a regra do MS manda manter; roteiro de revisão e limites
+  conhecidos. Vai dentro do zip como `MANUAL.md`. Teste `tests/test_manual.py`: cada tipo sugerido, motivo da ficha, chave,
+  coluna, campo de perfil e constante numérica do código tem de aparecer no manual.
+- Manual em PDF (A4, sumário com páginas, rodapé numerado), gerado do mesmo `docs/MANUAL.md` por
+  `build/build_manual_pdf.py` (markdown + WeasyPrint) no CI e no release; vai no zip como `MANUAL.pdf` e anexado ao release,
+  com sha256 em `SHA256SUMS.txt`.
+
+### Corrigido
+- Base de outro estado (município fora da tabela de ADS da SESA-CE): com `ID_REGIONA` em branco, as colunas de ADS saíam
+  "Ign/Branco" e o log não contava o par como sem ADS. Agora a coluna fica vazia, o par vai para o fim da aba e o log conta.
+  Com `ID_REGIONA` preenchido, continua saindo o nome da regional do Sinan. Teste com base sintética de São Paulo.
+
 ## [0.2.0] — 2026-10-27
 
 Primeira versão pública. Em relação à 0.1.0 (interna):

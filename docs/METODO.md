@@ -377,3 +377,50 @@ o corte já não é o da nota. Alternativas descartadas: 12 meses (SES-DF) e 280
 dias entre diagnósticos passam de "mesma gestação?" a "gestação diferente". No critério C3 (2026-10-25) o corte de gestante passa a
 315 dias; não é ajuste pós-hoc de limiar de aceite: os pares sintéticos plantados (10–200 e 400–800 dias) ficam do mesmo lado nas
 duas janelas, e foi acrescentado teste da fronteira (315 → mesma gestação, 316 → gestação diferente). 153 testes passando.
+
+### 2026-10-28 — Manual do usuário em `docs/MANUAL.md`, no repositório e no zip; não em wiki
+Contexto: projeto publicado com DOI (Zenodo, v0.2.0). O usuário pediu um manual entendível por terceiros, sobretudo das regras de
+duplicidade, e perguntou se seria melhor nos `.md` existentes, numa wiki do GitHub ou outra forma.
+Decisão: documento novo, `docs/MANUAL.md`, dentro do repositório, copiado para o zip como `MANUAL.md` (CRLF) e ligado do README,
+do `LEIA-ME.txt`, do template de issue e das notas do release. Os dois documentos anteriores ficam como estão e passam a ser
+referência citada pelo manual: `METODO.md` é diário de decisões (append-only) e `duplicidades_definicoes_manuais.md` é
+levantamento de fontes; nenhum dos dois é instrução de uso, e o §5 do levantamento é anterior às decisões (está superado por
+elas). Alternativas descartadas: (a) wiki do GitHub: é um repositório git separado, fora do tarball que o Zenodo arquiva em cada
+release, fora da tag, fora do zip e sem CI; rompe o acoplamento versão–documentação que o DOI promete; (b) reescrever os `.md`
+existentes: mudaria a natureza do diário e da revisão de fontes. O manual descreve o que `duplicates.py` faz nesta versão, não o
+que foi planejado: ordem das condições de `classify()`, códigos de entrada/saída por agravo, tolerância de 60 dias, janela de 315
+dias, similaridade 0,85, bloco de 50, regra da ficha a manter e critério de "já julgado". Anti-descolamento: `tests/test_manual.py`
+extrai por `ast` cada rótulo que `classify()` retorna e cada motivo de `_keep()`, e exige que apareçam no manual, junto com as
+chaves, as constantes, os campos e códigos de cada perfil e as colunas das duas abas (geradas por `build_tables` numa base
+mínima). Não verifica semântica; acusa mudança de regra sem mudança de texto. Pendente: o usuário vai testar o manual com o zip
+(seguir o manual usando o pacote). Fora do escopo por ora: GitHub Pages servindo `docs/` e PDF do manual anexado ao release;
+ficam como opções se a leitura no GitHub ou no `.md` dentro do zip se mostrar insuficiente para as equipes.
+
+### 2026-10-28 — Manual em PDF gerado do `MANUAL.md` (WeasyPrint), no zip e no release
+Contexto: o usuário informou que há colegas que trabalham com o manual impresso; o `.md` dentro do zip e a página do GitHub não
+servem para isso.
+Decisão: um só texto-fonte (`docs/MANUAL.md`) e um conversor, `build/build_manual_pdf.py`: markdown → HTML (`markdown` 3.11.2, com
+ids de título iguais aos do GitHub, para o sumário do `.md` continuar válido) → PDF A4 (`weasyprint` 70.0, CSS de mídia paginada:
+capa com versão, data, DOI de conceito e endereço dos documentos citados; sumário com número de página; rodapé "página N de M";
+quebra de página só antes das seções 1 e 4; `thead` repetido nas tabelas que atravessam página). Links para outros arquivos do
+repositório viram nome do arquivo (o endereço da árvore da versão está na capa); links externos imprimem o endereço. O PDF é
+gerado no CI (artefato, 30 dias) e no release (anexado, com sha256, e copiado para o zip como `MANUAL.pdf`); não é versionado no
+git. Alternativas descartadas: pandoc + LaTeX (pesado no runner, fontes e acentuação a gerir); Chrome headless (não suporta as
+caixas de margem do CSS paginado, logo sem "página N de M" sem script extra); committar o PDF (binário que muda a cada edição do
+texto e que o Zenodo arquivaria duplicado; o release e o zip já o distribuem). Verificação feita: 14 páginas, metadados
+(título, autor) corretos, tabelas dentro da margem nas páginas 7 e 11 (as mais largas), inspeção visual de todas as páginas em
+baixa resolução. Limite: o CI não compara o PDF com uma referência; só garante que ele é gerado e que os links do sumário
+resolvem.
+
+### 2026-10-28 — Base de outro estado: ADS vazia quando a regional do Sinan está em branco (era "Ign/Branco")
+Contexto: o usuário perguntou o que acontece com as colunas de ADS numa base que não é do Ceará (sem base real para testar).
+Medida em base sintética de TB (280 registros, 80 pares plantados, municípios de São Paulo), três cenários: `ID_REGIONA` com
+código da REGIONET, em branco, e mistura CE + SP. Nenhum trava; chaves, tipos e ficha sugerida saem iguais aos da base cearense.
+Defeito achado: com município fora da tabela da SESA e `ID_REGIONA` em branco, `_ads()` aceitava o rótulo "Ign/Branco" do campo
+como nome de regional: coluna de ADS com "Ign/Branco", par ordenado sob a letra I e não no fim, log sem contar o lado como sem ADS.
+Decisão: `_ads()` devolve vazio quando o código de `ID_REGIONA`/`ID_RG_RESI` está em branco ou sem nome na REGIONET; com código
+conhecido continua devolvendo o nome da regional do Sinan (por exemplo "GVE XXVI SAO JOAO DA BOA VISTA"). Teste de regressão
+`test_ads_outside_ceara_falls_back_to_sinan_regional_or_blank` (falhava antes da correção, passa depois); manual §4.8 descreve o
+comportamento. Limite: os códigos de GVE da base sintética são inventados (um colidiu com regional do Paraná, porque a REGIONET é
+nacional e a busca é só por código); em DBF real os códigos são os do próprio Sinan e não há motivo para colisão, mas isso não foi
+verificado em base real.

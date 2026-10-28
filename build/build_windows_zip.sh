@@ -1,12 +1,13 @@
 #!/bin/bash
 # Builds anotador_sinan_v<version>.zip: Windows embeddable Python 3.13.5 + win_amd64 wheels of pandas/numpy/openpyxl/dbfread +
-# src/sinan_anotador + tabelas/ + anotar.bat + LEIA-ME.txt + LICENSE. The version comes from src/sinan_anotador/__init__.py.
+# src/sinan_anotador + tabelas/ + anotar.bat + LEIA-ME.txt + MANUAL.md (docs/) + MANUAL.pdf (if build/build_manual_pdf.py ran) + LICENSE. The version comes from src/sinan_anotador/__init__.py.
 # Needs: curl, a Linux Python 3 with pip (only to download wheels), network to python.org and PyPI.
 # Usage: build/build_windows_zip.sh [out_dir]   (default: build/dist). The zip is not committed (.gitignore).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(dirname "$HERE")"
 OUT="${1:-$HERE/dist}"
+mkdir -p "$OUT" && OUT="$(cd "$OUT" && pwd)"   # absolute: the script cds into build/ below
 PY_VER=3.13.5
 EMB="python-${PY_VER}-embed-amd64.zip"
 EMB_SHA256=7d2650fd9d1b9d002d4a315d5f354247fd6a44f30517c7ef577b08f57a0fb6d9
@@ -63,10 +64,17 @@ if [ -d "$ROOT/tabelas/dicionarios" ]; then
     mkdir -p "$STAGE/app/dicionarios" && cp "$ROOT"/tabelas/dicionarios/*.csv "$STAGE/app/dicionarios/" 2>/dev/null || true
 fi
 cp "$HERE/anotar.bat" "$HERE/LEIA-ME.txt" "$STAGE/"
+cp "$ROOT/docs/MANUAL.md" "$STAGE/MANUAL.md"
+# printable manual, produced by build/build_manual_pdf.py (markdown + weasyprint) before this script
+if [ -f "$OUT/MANUAL_anotador_sinan_v$VERSION.pdf" ]; then
+    cp "$OUT/MANUAL_anotador_sinan_v$VERSION.pdf" "$STAGE/MANUAL.pdf"
+else
+    echo "AVISO: $OUT/MANUAL_anotador_sinan_v$VERSION.pdf não existe; o zip sai sem MANUAL.pdf (rode build/build_manual_pdf.py antes)" >&2
+fi
 cp "$ROOT/LICENSE" "$STAGE/LICENSE.txt"
 sed -i "s/@VERSAO@/$VERSION/g" "$STAGE/LEIA-ME.txt"
-# the .bat, the README and the licence must be readable by Windows: CRLF line endings
-sed -i 's/\r$//; s/$/\r/' "$STAGE/anotar.bat" "$STAGE/LEIA-ME.txt" "$STAGE/LICENSE.txt"
+# the .bat, the README, the manual and the licence must be readable by Windows: CRLF line endings
+sed -i 's/\r$//; s/$/\r/' "$STAGE/anotar.bat" "$STAGE/LEIA-ME.txt" "$STAGE/MANUAL.md" "$STAGE/LICENSE.txt"
 
 ZIP="$OUT/$(basename "$STAGE").zip"
 rm -f "$ZIP"
