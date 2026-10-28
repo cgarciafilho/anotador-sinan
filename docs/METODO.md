@@ -424,3 +424,30 @@ conhecido continua devolvendo o nome da regional do Sinan (por exemplo "GVE XXVI
 comportamento. Limite: os códigos de GVE da base sintética são inventados (um colidiu com regional do Paraná, porque a REGIONET é
 nacional e a busca é só por código); em DBF real os códigos são os do próprio Sinan e não há motivo para colisão, mas isso não foi
 verificado em base real.
+
+### 2026-10-28 — Base real de sífilis congênita (SIFICNET.DBF): nome não reconhecido e falha na gravação do xlsx
+Contexto: log do usuário com a base real (7.743 registros, 103 campos, cp1252): "o nome do arquivo (SIFICNET.DBF) não foi
+reconhecido; agravo escolhido pelo conjunto de campos: NotnegatNET.def (5 de 5 campos presentes)", 3 de 103 campos rotulados, e
+`RESULTADO: FALHA` com `IllegalCharacterError` do openpyxl numa célula de `DS_OBS`.
+Causas, verificadas no código: (1) a tabela de nomes conhecidos tinha `SIFCNET`, copiada do padrão `A` do `SifilisNET.def`
+(`Sifc*.DB?`), e não o nome que o Sinan NET grava (`SIFICNET`); os testes sintéticos usavam o mesmo nome errado e por isso nunca
+acusaram. (2) A escolha por conjunto de campos ordenava pela proporção de campos do `.def` presentes no DBF; recomputado com os
+103 campos do log: NotnegatNET 5/5 = 1,00, SifilisNET 47/54 = 0,87, NotIndiviNet 23/34 = 0,68 — um `.def` pequeno e genérico, só
+com campos da ficha de notificação, ganha de qualquer `.def` de agravo. Os 7 campos do SifilisNET ausentes são os `CRI_*`
+(critérios de definição), inferência: retirados em versão posterior da ficha. (3) O openpyxl recusa caracteres de controle
+(0–31, exceto tabulação, LF e CR); o caractere não aparece na mensagem porque é invisível (inferência: `\x00` de preenchimento
+ou `\x1a` de campo memo). A gravação é o último passo, então a falha perdia a anotação e as 632 duplicidades já calculadas.
+Decisão: `SIFICNET` entra nos nomes conhecidos (`SIFCNET` fica, por compatibilidade com o padrão do TabWin); a escolha por campos
+passa a exigir metade dos campos do `.def` (mínimo 5) e, entre os elegíveis, prefere o maior número absoluto de campos presentes,
+depois a proporção; o log lista até três outros candidatos com a contagem. Com a base do log: SifilisNET (47 de 54), outros
+GestSifNET (15 de 28), HivGestNET (15 de 29). Um DBF que é de fato a notificação individual genérica continua escolhendo
+`NotIndiviNet` (teste). Na gravação, `_cell_value` remove os caracteres que o openpyxl recusa e conta as células por aba e coluna;
+`write_xlsx` acrescenta ao log "AVISO: N células continham caracteres de controle … dados.DS_OBS (n)". A limpeza é só na
+gravação: o valor lido do DBF segue íntegro para as chaves de duplicidade e para o dicionário. Alternativa descartada: limpar na
+leitura (`read_dbf`), que mudaria o dado antes das chaves e esconderia do log a origem.
+Verificação: testes novos `test_detect_sifilis_congenita_real_name`, `test_detect_by_fields_prefers_specific_def_over_generic`
+e `tests/test_excel.py` (célula com `\x00`, `\x1a` e `\x07`; tabulação e quebra de linha preservadas; aviso com contagem por
+coluna; sem aviso quando não há nada a limpar); suíte completa 166 passados, 4 pulados. Ponta a ponta com SIFICNET sintético
+(49 campos, `\x00\x1a` injetado em `NM_PACIENT`): nome reconhecido, 34 de 49 campos rotulados, aviso de 1 célula, `RESULTADO: OK`;
+renomeado para `EXPORT.DBF`, a escolha por campos acerta SifilisNET. Limite: não foi rodado na base real do usuário; os 7 campos
+`CRI_*` do `.def` que o DBF não tem continuam só sem rótulo, como antes.

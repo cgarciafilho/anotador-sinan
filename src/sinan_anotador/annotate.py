@@ -44,7 +44,8 @@ GROUPING_CNV_RE = re.compile(
 KNOWN_DBF_PREFIXES = {
     "TUBENET": ["TuberculNET5_0", "TuberculNET"],
     "SIFGENET": ["GestSifNET"],
-    "SIFCNET": ["SifilisNET"],
+    "SIFICNET": ["SifilisNET"],      # sífilis congênita: nome real do export do Sinan NET (base SIFICNET.DBF, 2026-10-28)
+    "SIFCNET": ["SifilisNET"],       # padrão `A` do SifilisNET.def do TabWin (Sifc*.DB?), mantido por compatibilidade
     "HANSNET": ["HansNET"],
     "LEIVNET": ["LeishvisNET"],
     "LTANET": ["LeishtegNET"],
@@ -122,12 +123,17 @@ def detect_def(dbf_name: str, columns: list[str], tab_dir: Path) -> tuple[DefFil
         notes.append(f"agravo reconhecido pelo padrão de arquivo do .def ({chosen.dbf_pattern}): {chosen.name}.def"
                      + (f"; outros candidatos: {', '.join(c.name for c in cands if c is not chosen)}" if len(cands) > 1 else ""))
         return chosen, notes
-    # fallback: largest overlap of fields, requiring at least half of the .def fields present
-    scored = sorted(defs, key=lambda d: (len(d.fields & cols) / max(1, len(d.fields)), len(d.fields & cols)), reverse=True)
-    best = scored[0] if scored else None
-    if best and len(best.fields & cols) >= max(5, len(best.fields) // 2):
+    # fallback by field set: a .def is eligible when at least half of its fields (and at least 5) are in the DBF; among the
+    # eligible the largest absolute overlap wins, then the largest share. Ranking by share alone let NotnegatNET.def (5 generic
+    # notification fields, all present in any DBF) beat SifilisNET.def (47 of 54 present) on the real SIFICNET.DBF.
+    eligible = [d for d in defs if len(d.fields & cols) >= max(5, len(d.fields) // 2)]
+    scored = sorted(eligible, key=lambda d: (len(d.fields & cols), len(d.fields & cols) / max(1, len(d.fields))), reverse=True)
+    if scored:
+        best = scored[0]
+        others = [f"{d.name} ({len(d.fields & cols)} de {len(d.fields)})" for d in scored[1:4]]
         notes.append(f"AVISO: o nome do arquivo ({dbf_name}) não foi reconhecido; agravo escolhido pelo conjunto de campos: "
-                     f"{best.name}.def ({len(best.fields & cols)} de {len(best.fields)} campos presentes)")
+                     f"{best.name}.def ({len(best.fields & cols)} de {len(best.fields)} campos presentes)"
+                     + (f"; outros candidatos: {', '.join(others)}" if others else ""))
         return best, notes
     notes.append(f"AVISO: nenhum .def reconhecido para {dbf_name}; nenhum campo será rotulado")
     return None, notes

@@ -15,7 +15,7 @@ from synthetic import make_synthetic
 from dbf_writer import write_dbf
 
 AGRAVOS = {  # Sinan NET export name -> .def (TB: version 5.0 of the form; see METODO 2026-10-22)
-    "TUBENET": "TuberculNET5_0", "SIFCNET": "SifilisNET", "SIFGENET": "GestSifNET", "HANSNET": "HansNET",
+    "TUBENET": "TuberculNET5_0", "SIFICNET": "SifilisNET", "SIFGENET": "GestSifNET", "HANSNET": "HansNET",
     "LEIVNET": "LeishvisNET", "LTANET": "LeishtegNET", "DENGNET": "DengueNET",
 }
 

@@ -4,6 +4,19 @@ Formato de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); numeraç
 `MAIOR.MENOR.CORREÇÃO`. Enquanto a versão for `0.x`, a forma das abas e das colunas ainda pode mudar entre versões menores.
 Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para Windows e sua soma sha256.
 
+## [Não lançado]
+
+### Corrigido
+- Sífilis congênita: o Sinan NET exporta a base como `SIFICNET.DBF`, mas o programa só conhecia `SIFCNET` (o padrão `Sifc*.DB?`
+  do `SifilisNET.def` do TabWin). O nome não era reconhecido e a escolha caía no conjunto de campos, que elegia
+  `NotnegatNET.def` (5 campos genéricos, todos presentes) em vez de `SifilisNET.def` (47 de 54 presentes): só 3 de 103 campos
+  saíam rotulados. Agora `SIFICNET` é nome conhecido, e a escolha por conjunto de campos exige metade dos campos do `.def` e
+  então prefere o `.def` com mais campos presentes em número absoluto, não em proporção; o log lista os outros candidatos.
+- Gravação do xlsx: caracteres de controle (código 0–31, fora tabulação e quebra de linha) em campos de texto, comuns em
+  `DS_OBS` e outros campos longos do Sinan, faziam o openpyxl recusar a célula (`IllegalCharacterError`) e a execução inteira
+  falhava no último passo, depois da anotação e das duplicidades prontas. Agora são removidos ao gravar e o log avisa quantas
+  células e em quais colunas (`AVISO: N células continham caracteres de controle…`).
+
 ## [0.3.0] — 2026-10-28
 
 ### Adicionado

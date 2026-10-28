@@ -60,6 +60,27 @@ def test_detect_by_pattern_and_fields(tab_dir):
     assert d is None
 
 
+def test_detect_sifilis_congenita_real_name(tab_dir):
+    # Sinan NET exports congenital syphilis as SIFICNET.DBF; the TabWin .def pattern (Sifc*.DB?) never matched it
+    d, notes = detect_def("SIFICNET.DBF", [], tab_dir)
+    assert d.name == "SifilisNET" and any("nome do arquivo" in n for n in notes), notes
+
+
+def test_detect_by_fields_prefers_specific_def_over_generic(tab_dir):
+    # column set of the real SIFICNET.DBF (2026-10-28): all SifilisNET fields but the 7 CRI_* ones, plus the generic
+    # notification fields; ranking by share alone picked NotnegatNET.def (5 of 5 present) over SifilisNET.def (47 of 54)
+    sif = parse_def(tab_dir / "SifilisNET.def").fields
+    neg = parse_def(tab_dir / "NotnegatNET.def").fields
+    cols = sorted((sif - {f for f in sif if f.startswith("CRI_")}) | neg | {"DS_OBS", "NM_PACIENT", "DT_DIGITA"})
+    d, notes = detect_def("EXPORT.DBF", cols, tab_dir)
+    assert d.name == "SifilisNET", notes
+    assert any("conjunto de campos" in n and "SifilisNET.def (47 de 54" in n for n in notes), notes
+    # a DBF that really is the generic individual notification still gets the generic .def
+    ind = sorted(parse_def(tab_dir / "NotIndiviNet.def").fields)
+    d, notes = detect_def("EXPORT.DBF", ind, tab_dir)
+    assert d.name == "NotIndiviNet", notes
+
+
 def test_build_plan_tb(tab_dir):
     d = parse_def(tab_dir / "TuberculNET5_0.def")
     cols = sorted(d.fields)
