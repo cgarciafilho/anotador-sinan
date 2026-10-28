@@ -314,7 +314,10 @@ registro. Na revisão, trate-os depois dos "não".
 
 As duas abas vêm **ordenadas pela ADS da notificação A e depois pela data**, que é a ordem em que uma regional lê a lista.
 A ADS vem da tabela de regionalização da SESA-CE pelo município de notificação; se o município não está na tabela (outro
-estado), o programa usa o rótulo da regional do próprio Sinan (`ID_REGIONA`), e se também não há, a coluna fica vazia.
+estado), o programa usa o nome da regional do próprio Sinan (campo `ID_REGIONA`, nomes da tabela REGIONET do TabWin, por
+exemplo "GVE XXVI SAO JOAO DA BOA VISTA"), e se o campo está em branco ou o código não tem nome, a coluna fica vazia e o
+log conta o par em "lados de par sem ADS". Uma base de outro estado roda normalmente: as chaves, os tipos sugeridos e a ficha
+sugerida não dependem da ADS; só a ordem das abas passa a ser pela regional do Sinan, com os pares sem regional no fim.
 
 `duplicidades_resumo`, para circular:
 

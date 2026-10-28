@@ -411,3 +411,16 @@ texto e que o Zenodo arquivaria duplicado; o release e o zip já o distribuem). 
 (título, autor) corretos, tabelas dentro da margem nas páginas 7 e 11 (as mais largas), inspeção visual de todas as páginas em
 baixa resolução. Limite: o CI não compara o PDF com uma referência; só garante que ele é gerado e que os links do sumário
 resolvem.
+
+### 2026-10-28 — Base de outro estado: ADS vazia quando a regional do Sinan está em branco (era "Ign/Branco")
+Contexto: o usuário perguntou o que acontece com as colunas de ADS numa base que não é do Ceará (sem base real para testar).
+Medida em base sintética de TB (280 registros, 80 pares plantados, municípios de São Paulo), três cenários: `ID_REGIONA` com
+código da REGIONET, em branco, e mistura CE + SP. Nenhum trava; chaves, tipos e ficha sugerida saem iguais aos da base cearense.
+Defeito achado: com município fora da tabela da SESA e `ID_REGIONA` em branco, `_ads()` aceitava o rótulo "Ign/Branco" do campo
+como nome de regional: coluna de ADS com "Ign/Branco", par ordenado sob a letra I e não no fim, log sem contar o lado como sem ADS.
+Decisão: `_ads()` devolve vazio quando o código de `ID_REGIONA`/`ID_RG_RESI` está em branco ou sem nome na REGIONET; com código
+conhecido continua devolvendo o nome da regional do Sinan (por exemplo "GVE XXVI SAO JOAO DA BOA VISTA"). Teste de regressão
+`test_ads_outside_ceara_falls_back_to_sinan_regional_or_blank` (falhava antes da correção, passa depois); manual §4.8 descreve o
+comportamento. Limite: os códigos de GVE da base sintética são inventados (um colidiu com regional do Paraná, porque a REGIONET é
+nacional e a busca é só por código); em DBF real os códigos são os do próprio Sinan e não há motivo para colisão, mas isso não foi
+verificado em base real.

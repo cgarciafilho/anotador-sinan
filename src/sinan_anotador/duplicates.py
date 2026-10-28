@@ -311,12 +311,16 @@ def load_ads(path) -> dict[str, tuple[str, str]]:
 
 
 def _ads(row, col: str, ads: dict[str, tuple[str, str]]):
-    """ADS of the municipality in `col`; falls back to the Sinan regional label (ID_REGIONA/ID_RG_RESI) when the table lacks it."""
+    """ADS of the municipality in `col`; falls back to the Sinan regional label (ID_REGIONA/ID_RG_RESI) when the table lacks it
+    (a base from another state). None when the regional code is blank or has no label: the blank label ("Ign/Branco") is not a
+    regional (METODO 2026-10-28)."""
     c = code(row.get(col))[:6]
     if c in ads:
         return ads[c][0]
-    reg = {"ID_MUNICIP": "ID_REGIONA_rotulo", "ID_MN_RESI": "ID_RG_RESI_rotulo"}.get(col)
-    v = _value(row, reg) if reg else None
+    reg = {"ID_MUNICIP": "ID_REGIONA", "ID_MN_RESI": "ID_RG_RESI"}.get(col)
+    if not reg or not code(row.get(reg)):
+        return None
+    v = _value(row, f"{reg}_rotulo")
     return v if isinstance(v, str) and not v.endswith("sem rótulo") else None
 
 

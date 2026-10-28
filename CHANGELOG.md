@@ -15,6 +15,11 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
   `build/build_manual_pdf.py` (markdown + WeasyPrint) no CI e no release; vai no zip como `MANUAL.pdf` e anexado ao release,
   com sha256 em `SHA256SUMS.txt`.
 
+### Corrigido
+- Base de outro estado (município fora da tabela de ADS da SESA-CE): com `ID_REGIONA` em branco, as colunas de ADS saíam
+  "Ign/Branco" e o log não contava o par como sem ADS. Agora a coluna fica vazia, o par vai para o fim da aba e o log conta.
+  Com `ID_REGIONA` preenchido, continua saindo o nome da regional do Sinan. Teste com base sintética de São Paulo.
+
 ## [0.2.0] — 2026-10-27
 
 Primeira versão pública. Em relação à 0.1.0 (interna):
