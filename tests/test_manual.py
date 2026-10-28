@@ -98,3 +98,32 @@ def test_manual_ships_in_the_zip_and_is_linked():
     assert "MANUAL.md" in build
     assert "MANUAL.md" in (ROOT / "build" / "LEIA-ME.txt").read_text(encoding="utf-8")
     assert "docs/MANUAL.md" in (ROOT / "README.md").read_text(encoding="utf-8")
+
+
+def test_manual_ships_as_pdf_too():
+    build = (ROOT / "build" / "build_windows_zip.sh").read_text(encoding="utf-8")
+    assert "MANUAL.pdf" in build and "build_manual_pdf.py" in build
+    for wf in ("ci.yml", "release.yml"):
+        assert "build_manual_pdf.py" in (ROOT / ".github" / "workflows" / wf).read_text(encoding="utf-8"), wf
+    assert "`MANUAL.pdf`" in MANUAL
+
+
+def test_pdf_converter_keeps_every_heading_and_summary_link():
+    """The HTML the PDF is made from has an id for every heading, the same ids GitHub gives, so the Sumário links resolve."""
+    import importlib.util
+    pytest = __import__("pytest")
+    pytest.importorskip("markdown")
+    spec = importlib.util.spec_from_file_location("build_manual_pdf", ROOT / "build" / "build_manual_pdf.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    heads = mod.headings_with_ids(MANUAL)
+    ids = {i for _, _, i in heads}
+    links = re.findall(r"\]\(#([^)]+)\)", MANUAL)
+    assert links and not [l for l in links if l not in ids]
+    body = mod.md_to_html(MANUAL, "0.0.0")
+    for level, _, i in heads:
+        if level == 1:          # the title goes to the cover, not to the body
+            continue
+        assert f'id="{i}"' in body, i
+    assert '<ol class="sumario">' in body
+    assert "METODO.md" in body and 'href="METODO.md"' not in body     # repository links become plain names in print

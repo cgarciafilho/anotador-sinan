@@ -5,7 +5,8 @@ Explica o que o programa faz com o DBF do Sinan NET, como ler o xlsx que ele ger
 duplicidade suspeita são achados e classificados**, porque essa é a parte em que uma pessoa precisa confiar no critério para
 tomar a decisão no Sinan.
 
-Vale para a versão indicada na primeira linha do `.log.txt` que o programa grava. O texto descreve o que o código faz nesta
+Vale para a versão indicada na primeira linha do `.log.txt` que o programa grava. O PDF deste manual vem dentro do zip e
+anexado a cada release; o texto-fonte é `docs/MANUAL.md` no repositório. O texto descreve o que o código faz nesta
 versão; as razões de cada escolha, com data, estão em [`METODO.md`](METODO.md), e as definições dos manuais do Ministério da
 Saúde, com fonte e página, em [`duplicidades_definicoes_manuais.md`](duplicidades_definicoes_manuais.md).
 
@@ -71,7 +72,8 @@ Dentro do zip:
 |---|---|
 | `anotar.bat` | O programa. Arraste os DBF sobre ele. |
 | `LEIA-ME.txt` | Resumo deste manual, em texto puro. |
-| `MANUAL.md` | Este manual. Abre em qualquer editor de texto; no GitHub aparece formatado. |
+| `MANUAL.pdf` | Este manual, para ler na tela ou imprimir. |
+| `MANUAL.md` | O mesmo manual em texto puro (é o arquivo-fonte do PDF). Abre em qualquer editor; no GitHub aparece formatado. |
 | `app\sinan_anotador\` | Código-fonte (Python). |
 | `app\tab_sinannet\` | Tabelas `.def`/`.cnv` do TabWin (DATASUS) e `unidanet.csv` (nomes das unidades, do CNES). |
 | `app\regionalizacao_sesa_sr_ads.csv` | Município → ADS e superintendência regional (SESA-CE). |

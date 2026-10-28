@@ -44,6 +44,13 @@ jobs:
           python -m pip install --quiet "pandas==3.0.6" "numpy==2.5.4" "openpyxl==3.1.5" "dbfread==2.0.7" pytest
           python -m pytest tests/ -q
 
+      - name: Manual em PDF (docs/MANUAL.md → build/dist/MANUAL_anotador_sinan_v*.pdf)
+        if: steps.v.outputs.existe == '0'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 fonts-liberation fonts-dejavu-core
+          python -m pip install --quiet "markdown==3.11.2" "weasyprint==70.0"
+          python build/build_manual_pdf.py
+
       - name: Montar o zip para Windows
         if: steps.v.outputs.existe == '0'
         run: build/build_windows_zip.sh
@@ -52,7 +59,7 @@ jobs:
         if: steps.v.outputs.existe == '0'
         run: |
           cd build/dist
-          sha256sum anotador_sinan_v*.zip > SHA256SUMS.txt
+          sha256sum anotador_sinan_v*.zip MANUAL_anotador_sinan_v*.pdf > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Notas do release a partir do CHANGELOG
@@ -66,7 +73,7 @@ jobs:
           ' CHANGELOG.md > notes.md
           {
             echo
-            echo "**Como usar:** baixe \`anotador_sinan_v${V}.zip\`, descompacte em qualquer pasta e arraste os arquivos .DBF do Sinan NET sobre \`anotar.bat\`. Não precisa instalar nada. Resumo no \`LEIA-ME.txt\` e manual completo no \`MANUAL.md\`, os dois dentro do zip (o manual também em [docs/MANUAL.md](https://github.com/cgarciafilho/anotador-sinan/blob/v${V}/docs/MANUAL.md))."
+            echo "**Como usar:** baixe \`anotador_sinan_v${V}.zip\`, descompacte em qualquer pasta e arraste os arquivos .DBF do Sinan NET sobre \`anotar.bat\`. Não precisa instalar nada. Resumo no \`LEIA-ME.txt\` e manual completo em \`MANUAL.pdf\` (para imprimir) e \`MANUAL.md\`, os três dentro do zip. O PDF também está anexado abaixo, e o texto em [docs/MANUAL.md](https://github.com/cgarciafilho/anotador-sinan/blob/v${V}/docs/MANUAL.md)."
             echo
             echo "**Conferência:** sha256 em \`SHA256SUMS.txt\`."
           } >> notes.md
@@ -79,4 +86,4 @@ jobs:
         run: |
           TAG="${{ steps.v.outputs.tag }}"
           gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "anotador SINAN $TAG" --notes-file notes.md \
-            build/dist/anotador_sinan_v*.zip build/dist/SHA256SUMS.txt
+            build/dist/anotador_sinan_v*.zip build/dist/MANUAL_anotador_sinan_v*.pdf build/dist/SHA256SUMS.txt

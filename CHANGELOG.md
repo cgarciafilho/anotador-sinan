@@ -11,6 +11,9 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
   duplicidade são achados, classificados por agravo e qual ficha a regra do MS manda manter; roteiro de revisão e limites
   conhecidos. Vai dentro do zip como `MANUAL.md`. Teste `tests/test_manual.py`: cada tipo sugerido, motivo da ficha, chave,
   coluna, campo de perfil e constante numérica do código tem de aparecer no manual.
+- Manual em PDF (A4, sumário com páginas, rodapé numerado), gerado do mesmo `docs/MANUAL.md` por
+  `build/build_manual_pdf.py` (markdown + WeasyPrint) no CI e no release; vai no zip como `MANUAL.pdf` e anexado ao release,
+  com sha256 em `SHA256SUMS.txt`.
 
 ## [0.2.0] — 2026-10-27
 

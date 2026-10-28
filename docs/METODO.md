@@ -395,3 +395,19 @@ chaves, as constantes, os campos e códigos de cada perfil e as colunas das duas
 mínima). Não verifica semântica; acusa mudança de regra sem mudança de texto. Pendente: o usuário vai testar o manual com o zip
 (seguir o manual usando o pacote). Fora do escopo por ora: GitHub Pages servindo `docs/` e PDF do manual anexado ao release;
 ficam como opções se a leitura no GitHub ou no `.md` dentro do zip se mostrar insuficiente para as equipes.
+
+### 2026-10-28 — Manual em PDF gerado do `MANUAL.md` (WeasyPrint), no zip e no release
+Contexto: o usuário informou que há colegas que trabalham com o manual impresso; o `.md` dentro do zip e a página do GitHub não
+servem para isso.
+Decisão: um só texto-fonte (`docs/MANUAL.md`) e um conversor, `build/build_manual_pdf.py`: markdown → HTML (`markdown` 3.11.2, com
+ids de título iguais aos do GitHub, para o sumário do `.md` continuar válido) → PDF A4 (`weasyprint` 70.0, CSS de mídia paginada:
+capa com versão, data, DOI de conceito e endereço dos documentos citados; sumário com número de página; rodapé "página N de M";
+quebra de página só antes das seções 1 e 4; `thead` repetido nas tabelas que atravessam página). Links para outros arquivos do
+repositório viram nome do arquivo (o endereço da árvore da versão está na capa); links externos imprimem o endereço. O PDF é
+gerado no CI (artefato, 30 dias) e no release (anexado, com sha256, e copiado para o zip como `MANUAL.pdf`); não é versionado no
+git. Alternativas descartadas: pandoc + LaTeX (pesado no runner, fontes e acentuação a gerir); Chrome headless (não suporta as
+caixas de margem do CSS paginado, logo sem "página N de M" sem script extra); committar o PDF (binário que muda a cada edição do
+texto e que o Zenodo arquivaria duplicado; o release e o zip já o distribuem). Verificação feita: 14 páginas, metadados
+(título, autor) corretos, tabelas dentro da margem nas páginas 7 e 11 (as mais largas), inspeção visual de todas as páginas em
+baixa resolução. Limite: o CI não compara o PDF com uma referência; só garante que ele é gerado e que os links do sumário
+resolvem.
