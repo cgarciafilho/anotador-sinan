@@ -4,6 +4,10 @@ ANOTADOR SINAN — versão @VERSAO@
 Código-fonte, versões anteriores, registro de mudanças e relato de problemas:
 https://github.com/cgarciafilho/anotador-sinan (licença MIT; ver LICENSE.txt).
 
+Este arquivo é o resumo. O manual completo, com as regras de duplicidade explicadas uma a uma (chaves, tipo sugerido
+por agravo, ficha a manter, roteiro de revisão), é o MANUAL.md nesta mesma pasta (abre em qualquer editor de texto) ou,
+formatado, em https://github.com/cgarciafilho/anotador-sinan/blob/main/docs/MANUAL.md
+
 O QUE FAZ
 - Lê o arquivo DBF exportado do Sinan NET (ex.: TUBENET.DBF, SIFGENET.DBF, HANSNET.DBF) e grava, na mesma pasta,
   <nome>_anotado.xlsx com:
@@ -64,4 +68,5 @@ CONTEÚDO
   app\tab_sinannet\     — tabelas .def/.cnv do TabWin (DATASUS) e unidanet.csv (CNES)
   app\regionalizacao_sesa_sr_ads.csv — município → ADS e superintendência regional (SESA-CE)
   python\               — Python 3.13 "embeddable" e bibliotecas
+  MANUAL.md             — manual completo (regras de duplicidade, colunas, roteiro de revisão)
   LICENSE.txt           — licença MIT do anotador (as tabelas do DATASUS e do CNES são dados públicos do SUS)

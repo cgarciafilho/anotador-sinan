@@ -66,7 +66,7 @@ jobs:
           ' CHANGELOG.md > notes.md
           {
             echo
-            echo "**Como usar:** baixe \`anotador_sinan_v${V}.zip\`, descompacte em qualquer pasta e arraste os arquivos .DBF do Sinan NET sobre \`anotar.bat\`. Não precisa instalar nada. Detalhes no \`LEIA-ME.txt\` dentro do zip."
+            echo "**Como usar:** baixe \`anotador_sinan_v${V}.zip\`, descompacte em qualquer pasta e arraste os arquivos .DBF do Sinan NET sobre \`anotar.bat\`. Não precisa instalar nada. Resumo no \`LEIA-ME.txt\` e manual completo no \`MANUAL.md\`, os dois dentro do zip (o manual também em [docs/MANUAL.md](https://github.com/cgarciafilho/anotador-sinan/blob/v${V}/docs/MANUAL.md))."
             echo
             echo "**Conferência:** sha256 em \`SHA256SUMS.txt\`."
           } >> notes.md

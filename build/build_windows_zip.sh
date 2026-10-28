@@ -1,6 +1,6 @@
 #!/bin/bash
 # Builds anotador_sinan_v<version>.zip: Windows embeddable Python 3.13.5 + win_amd64 wheels of pandas/numpy/openpyxl/dbfread +
-# src/sinan_anotador + tabelas/ + anotar.bat + LEIA-ME.txt + LICENSE. The version comes from src/sinan_anotador/__init__.py.
+# src/sinan_anotador + tabelas/ + anotar.bat + LEIA-ME.txt + MANUAL.md (docs/) + LICENSE. The version comes from src/sinan_anotador/__init__.py.
 # Needs: curl, a Linux Python 3 with pip (only to download wheels), network to python.org and PyPI.
 # Usage: build/build_windows_zip.sh [out_dir]   (default: build/dist). The zip is not committed (.gitignore).
 set -euo pipefail
@@ -63,10 +63,11 @@ if [ -d "$ROOT/tabelas/dicionarios" ]; then
     mkdir -p "$STAGE/app/dicionarios" && cp "$ROOT"/tabelas/dicionarios/*.csv "$STAGE/app/dicionarios/" 2>/dev/null || true
 fi
 cp "$HERE/anotar.bat" "$HERE/LEIA-ME.txt" "$STAGE/"
+cp "$ROOT/docs/MANUAL.md" "$STAGE/MANUAL.md"
 cp "$ROOT/LICENSE" "$STAGE/LICENSE.txt"
 sed -i "s/@VERSAO@/$VERSION/g" "$STAGE/LEIA-ME.txt"
-# the .bat, the README and the licence must be readable by Windows: CRLF line endings
-sed -i 's/\r$//; s/$/\r/' "$STAGE/anotar.bat" "$STAGE/LEIA-ME.txt" "$STAGE/LICENSE.txt"
+# the .bat, the README, the manual and the licence must be readable by Windows: CRLF line endings
+sed -i 's/\r$//; s/$/\r/' "$STAGE/anotar.bat" "$STAGE/LEIA-ME.txt" "$STAGE/MANUAL.md" "$STAGE/LICENSE.txt"
 
 ZIP="$OUT/$(basename "$STAGE").zip"
 rm -f "$ZIP"

@@ -22,7 +22,7 @@ agravos do Sinan NET e o programa não depende de nada específico do Ceará, ex
 
 Se o Windows perguntar sobre "aplicativo não reconhecido", escolha "Mais informações" e "Executar assim mesmo": o pacote é
 só Python (python.org) com as bibliotecas pandas, numpy, openpyxl e dbfread, sem instalação. O `LEIA-ME.txt` dentro do zip
-descreve cada aba e cada coluna.
+descreve cada aba e cada coluna; o manual completo é [`docs/MANUAL.md`](docs/MANUAL.md).
 
 **Sigilo.** O xlsx copia todos os campos do DBF, inclusive nome, nome da mãe, nascimento e endereço; as abas de
 duplicidades também trazem nome do paciente. Ele é tão nominal quanto o DBF e deve ficar no mesmo lugar protegido.
@@ -68,6 +68,9 @@ mais recente; use-o para citar o programa em geral. Para reprodutibilidade, cite
 
 ## Método e documentação
 
+- [`docs/MANUAL.md`](docs/MANUAL.md): manual para quem usa o programa: como rodar, como ler cada aba e, regra por regra,
+  como os pares de duplicidade são achados (quatro chaves), classificados por agravo e qual ficha a regra do MS manda manter.
+  Um teste (`tests/test_manual.py`) falha quando o código muda e o manual não.
 - [`docs/METODO.md`](docs/METODO.md): decisões datadas e append-only, com os critérios de aceite escritos **antes** de medir
   (base sintética com verdade conhecida; resultados registrados mesmo quando reprovados) e os bugs corrigidos.
 - [`docs/duplicidades_definicoes_manuais.md`](docs/duplicidades_definicoes_manuais.md): o que os manuais do Ministério da
@@ -103,7 +106,7 @@ tabelas/tab_sinannet/ .def/.cnv e DBFs do TAB_SINANNET (TabWin, DATASUS, 2021) e
 tabelas/dicionarios/  nomes por extenso dos campos (dicionários de dados do DATASUS: TB, hanseníase, LTA, LV)
 tabelas/regionalizacao_sesa_sr_ads.csv   município → ADS e superintendência regional (SESA-CE, 2022)
 scripts/              make_unidanet_csv.py: atualiza unidanet.csv a partir do CNES público
-docs/                 METODO.md e o levantamento das definições de duplicidade
+docs/                 MANUAL.md (manual do usuário), METODO.md e o levantamento das definições de duplicidade
 ```
 
 ## Fontes dos dados e créditos

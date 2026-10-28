@@ -377,3 +377,21 @@ o corte já não é o da nota. Alternativas descartadas: 12 meses (SES-DF) e 280
 dias entre diagnósticos passam de "mesma gestação?" a "gestação diferente". No critério C3 (2026-10-25) o corte de gestante passa a
 315 dias; não é ajuste pós-hoc de limiar de aceite: os pares sintéticos plantados (10–200 e 400–800 dias) ficam do mesmo lado nas
 duas janelas, e foi acrescentado teste da fronteira (315 → mesma gestação, 316 → gestação diferente). 153 testes passando.
+
+### 2026-10-28 — Manual do usuário em `docs/MANUAL.md`, no repositório e no zip; não em wiki
+Contexto: projeto publicado com DOI (Zenodo, v0.2.0). O usuário pediu um manual entendível por terceiros, sobretudo das regras de
+duplicidade, e perguntou se seria melhor nos `.md` existentes, numa wiki do GitHub ou outra forma.
+Decisão: documento novo, `docs/MANUAL.md`, dentro do repositório, copiado para o zip como `MANUAL.md` (CRLF) e ligado do README,
+do `LEIA-ME.txt`, do template de issue e das notas do release. Os dois documentos anteriores ficam como estão e passam a ser
+referência citada pelo manual: `METODO.md` é diário de decisões (append-only) e `duplicidades_definicoes_manuais.md` é
+levantamento de fontes; nenhum dos dois é instrução de uso, e o §5 do levantamento é anterior às decisões (está superado por
+elas). Alternativas descartadas: (a) wiki do GitHub: é um repositório git separado, fora do tarball que o Zenodo arquiva em cada
+release, fora da tag, fora do zip e sem CI; rompe o acoplamento versão–documentação que o DOI promete; (b) reescrever os `.md`
+existentes: mudaria a natureza do diário e da revisão de fontes. O manual descreve o que `duplicates.py` faz nesta versão, não o
+que foi planejado: ordem das condições de `classify()`, códigos de entrada/saída por agravo, tolerância de 60 dias, janela de 315
+dias, similaridade 0,85, bloco de 50, regra da ficha a manter e critério de "já julgado". Anti-descolamento: `tests/test_manual.py`
+extrai por `ast` cada rótulo que `classify()` retorna e cada motivo de `_keep()`, e exige que apareçam no manual, junto com as
+chaves, as constantes, os campos e códigos de cada perfil e as colunas das duas abas (geradas por `build_tables` numa base
+mínima). Não verifica semântica; acusa mudança de regra sem mudança de texto. Pendente: o usuário vai testar o manual com o zip
+(seguir o manual usando o pacote). Fora do escopo por ora: GitHub Pages servindo `docs/` e PDF do manual anexado ao release;
+ficam como opções se a leitura no GitHub ou no `.md` dentro do zip se mostrar insuficiente para as equipes.
