@@ -124,6 +124,7 @@ def make_synthetic(deffile: DefFile, tab_dir: Path, out: Path, n: int = 300, see
     records = []
     for i in range(n):
         rec = {"NU_NOTIFIC": f"{i + 1:07d}", "NM_PACIENT": f"{rng.choice(FIRST)} {rng.choice(LAST)}"}
+        deferred: list[tuple[str, str]] = []
         for f in fields_def:
             if f in rec:
                 continue
@@ -170,7 +171,15 @@ def make_synthetic(deffile: DefFile, tab_dir: Path, out: Path, n: int = 300, see
                 codes, _ = rng.choice(fp.cnv.categories)
                 code = code_from_line(codes, rng, widths[f]) or ""
             rec[f] = code
-            truth.setdefault(f, Counter())[expected_label(code, tables)] += 1
+            if fp.switch is not None:
+                deferred.append((f, code))      # the table depends on another field's value: resolved once the record is complete
+            else:
+                truth.setdefault(f, Counter())[expected_label(code, tables)] += 1
+        for f, code in deferred:
+            fp = plan.fields[f]
+            sw_col, by_code = fp.switch
+            table = by_code.get(str(rec.get(sw_col) or "").strip(), fp.cnv)
+            truth.setdefault(f, Counter())[expected_label(code, [table, *fp.fallbacks])] += 1
         records.append(rec)
     write_dbf(out, spec, records, encoding=encoding)
     return out, {"truth": truth, "truth_age": truth_age, "dates": truth_dates, "n": n, "plan": plan,

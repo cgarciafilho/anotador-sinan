@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from .cnv import Cnv, DefFile, DefLine, dbf_pattern_to_regex, find_cnv, parse_cnv, parse_def
+from .cnv import Cnv, DefFile, DefLine, cnv_from_categories, dbf_pattern_to_regex, def_field, find_cnv, parse_cnv, parse_def
 from .lookup import LookupTable, find_lookup_files, load_lookup
-from .names import FieldName, resolve_names
+from .names import FieldName, load_csv_categories, resolve_names
 
 NO_LABEL = "[{code}] sem rótulo"
 CODE_PREFIX_RE = re.compile(r"^\d{2,}\s+(?=\S)")   # "230650 Itapiúna" -> "Itapiúna"; "23 Ceará" -> "Ceará"
@@ -47,9 +47,19 @@ KNOWN_DBF_PREFIXES = {
     "SIFICNET": ["SifilisNET"],      # sífilis congênita: nome real do export do Sinan NET (base SIFICNET.DBF, 2026-10-28)
     "SIFCNET": ["SifilisNET"],       # padrão `A` do SifilisNET.def do TabWin (Sifc*.DB?), mantido por compatibilidade
     "HANSNET": ["HansNET"],
+    "LEISHNET": ["LeishvisNET"],     # leishmaniose visceral: nome real do export (base LEISHNET.DBF, 2026-10-28)
     "LEIVNET": ["LeishvisNET"],
+    "MENINNET": ["MeningeNET"],      # meningite: nome real do export (base MENINNET.DBF, 2026-10-28)
     "LTANET": ["LeishtegNET"],
     "DENGNET": ["DengueNET"],
+}
+
+
+# fields whose .def lists one category table per value of another field: DOSE_RECEB (doses received) is read against
+# NUDOSEPB.CNV for paucibacillary (CLASSOPERA 1: "6 doses" is the full scheme) and NUDOSEMB.CNV for multibacillary
+# (CLASSOPERA 2: 12 doses); any other classification gets the plain count (NUDOSES.CNV). Codes: Classop.cnv.
+TABLE_SWITCH: dict[str, tuple[str, dict[str, str], str]] = {
+    "DOSE_RECEB": ("CLASSOPERA", {"1": "NUDOSEPB.CNV", "2": "NUDOSEMB.CNV"}, "NUDOSES.CNV"),
 }
 
 
@@ -60,6 +70,7 @@ class FieldPlan:
     start: int                      # 1-based start inside the field
     fallbacks: list[Cnv] = field(default_factory=list)   # tried when the main table has no line for the code
     def_label: str = ""
+    switch: tuple[str, dict[str, Cnv]] | None = None     # (DBF column, its code -> table) chosen per record; `cnv` otherwise
 
 
 @dataclass
@@ -72,6 +83,8 @@ class Plan:
     skipped: list[str]                      # messages about .def lines not usable here
     lookups: dict[str, LookupTable] = field(default_factory=dict)   # external tables actually loaded, by file name
     coverage: dict[str, dict] = field(default_factory=dict)        # per field with an external table: counts filled by apply_plan
+    notes: list[str] = field(default_factory=list)                 # decisions worth logging that are not warnings
+    missing_cnv: set[str] = field(default_factory=set)             # .cnv files the .def cites and tab_dir lacks
 
 
 def tab_dir_default(start: Path | None = None) -> Path | None:
@@ -97,7 +110,7 @@ def detect_def(dbf_name: str, columns: list[str], tab_dir: Path) -> tuple[DefFil
     defs = load_defs(tab_dir)
     by_name = {d.name: d for d in defs}
     stem = Path(dbf_name).stem.upper()
-    cols = {c.upper() for c in columns}
+    cols = {def_field(c) for c in columns}
 
     def rank(cands: list[DefFile]) -> DefFile:
         def key(d: DefFile):
@@ -140,9 +153,16 @@ def detect_def(dbf_name: str, columns: list[str], tab_dir: Path) -> tuple[DefFil
 
 
 # ----------------------------------------------------------------------------- building the plan
-def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str], tab_dir: Path) -> Plan:
+def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str], tab_dir: Path,
+               csv_dir: Path | None = None) -> Plan:
+    """`csv_dir` (default: `dicionarios` beside the TabWin tables) holds the dictionary CSVs whose `categorias_cnv` stand in
+    for .cnv files the .def cites but `tab_dir` lacks."""
     cols = {c.upper(): c for c in columns}
+    for c in columns:                       # BACILOSCO in the DBF is BACILOSCOP in the .def: plan it under the .def name
+        if def_field(c) not in cols:
+            cols[def_field(c)] = c
     cache: dict[str, Cnv | None] = {}
+    csv_cats = load_csv_categories(csv_dir if csv_dir is not None else Path(tab_dir).parent / "dicionarios", deffile.name)
 
     def get_cnv(name: str) -> Cnv | None:
         key = name.upper()
@@ -153,10 +173,13 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
 
     warnings: list[str] = []
     skipped: list[str] = []
+    notes: list[str] = []
+    missing_cnv: set[str] = set()
     plans: dict[str, FieldPlan] = {}
     lookups: dict[str, LookupTable] = {}          # by file name on disk
     lookup_sets: dict[str, list[LookupTable]] = {}  # by .def table name
     lookups_missing: set[str] = set()
+    lookups_empty: set[str] = set()               # files that exist but hold no rows (BAIRRNET.DBF in TAB_SINANNET.zip)
 
     def tables_for(ln: DefLine) -> list[LookupTable]:
         """Every readable file for the line's table, best first (CSV we built, then TabWin's DBF); [] when none exists."""
@@ -174,6 +197,12 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
             try:
                 # the name field in the .def is the column of the lookup file; the code column is named like the DBF field
                 t = load_lookup(p, ln.field, ln.name_field or "NOME")
+            except ValueError as e:
+                if str(e) == "tabela vazia":    # shipped empty: not a broken file, just no table (noted per field below)
+                    lookups_empty.add(key)
+                    continue
+                warnings.append(f"tabela externa {p.name} não pôde ser lida: {e}")
+                continue
             except Exception as e:      # a broken table must not abort the run
                 warnings.append(f"tabela externa {p.name} não pôde ser lida: {e}")
                 continue
@@ -196,6 +225,13 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
         if not chain:
             return None, []
         return chain[0], chain[1:]
+    def external_missing(ln: DefLine) -> str:
+        name = ln.lookup_dbf
+        if name.lower() in lookups_empty:
+            hint = " (o nome do bairro já vem em NM_BAIRRO)" if name.upper().startswith("BAIRR") and "NM_BAIRRO" in cols else ""
+            return f"tabela externa {name} vem vazia no pacote do TabWin; sem rótulo{hint}"
+        return f"tabela externa {name} não disponível; sem rótulo"
+
     age_band: Cnv | None = None
     age_field: str | None = AGE_FIELD if AGE_FIELD in cols else None
 
@@ -217,7 +253,7 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
                 if table is not None:
                     plans[col] = FieldPlan(col, table, 1, more, def_label=dbf_lines[0].label)
                 else:
-                    skipped.append(f"{fld}: tabela externa {dbf_lines[0].lookup_dbf} não disponível; sem rótulo")
+                    skipped.append(f"{fld}: {external_missing(dbf_lines[0])}")
             else:
                 skipped.append(f"{fld}: soma no .def; sem rótulo")
             continue
@@ -260,9 +296,18 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
                 if table is not None:
                     plans[col] = FieldPlan(col, table, 1, more, def_label=dbf_lines[0].label)
                     continue
-                skipped.append(f"{fld}: tabela externa {dbf_lines[0].lookup_dbf} não disponível; sem rótulo")
+                skipped.append(f"{fld}: {external_missing(dbf_lines[0])}")
             elif missing:
-                warnings.append(f"{fld}: tabela {', '.join(sorted(set(missing)))} citada no .def não está disponível; sem rótulo")
+                missing_cnv.update(missing)
+                if fld in csv_cats:
+                    # the dictionary CSV copied the categories from the .cnv when it was extracted: rebuild the table
+                    cats, csv_name = csv_cats[fld]
+                    c = cnv_from_categories(f"{sorted(set(missing))[0]} (reconstruída de {csv_name})", cats)
+                    plans[col] = FieldPlan(col, c, cnv_lines[0].start or 1, [], def_label=cnv_lines[0].label)
+                    notes.append(f"{fld}: tabela {', '.join(sorted(set(missing)))} ausente em tab_sinannet; categorias tomadas de "
+                                 f"{csv_name} ({'; '.join(f'{k}={v}' for k, v in cats)})")
+                else:
+                    warnings.append(f"{fld}: tabela {', '.join(sorted(set(missing)))} citada no .def não está disponível; sem rótulo")
             else:
                 skipped.append(f"{fld}: só agrupamentos no .def; sem rótulo")
             continue
@@ -272,10 +317,19 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
             # the same UF list, by code+name and by acronym: use the one with names, no warning
             ln, c = next((ln, c) for ln, c in usable if c.name.upper() == "UFCODIGO.CNV")
             distinct = {c.name.upper()}
+        if len(distinct) > 1 and fld in TABLE_SWITCH:
+            sw_field, by_code, default = TABLE_SWITCH[fld]
+            tables = {code: next((cv for _, cv in usable if cv.name.upper() == name), None) for code, name in by_code.items()}
+            dflt = next((cv for _, cv in usable if cv.name.upper() == default), None)
+            if sw_field in cols and dflt is not None and all(tables.values()):
+                plans[col] = FieldPlan(col, dflt, ln.start or 1, [], def_label=ln.label, switch=(cols[sw_field], tables))
+                notes.append(f"{fld}: tabela escolhida por {sw_field} em cada registro ("
+                             + ", ".join(f"{code} → {t.name}" for code, t in tables.items()) + f"; demais → {dflt.name})")
+                continue
         if len(distinct) > 1:
             warnings.append(f"{fld}: mais de uma tabela de categorias no .def ({', '.join(sorted(distinct))}); usada {c.name}")
         plans[col] = FieldPlan(col, c, ln.start or 1, [], def_label=ln.label)
-    return Plan(deffile, plans, age_field, age_band, warnings, skipped, lookups)
+    return Plan(deffile, plans, age_field, age_band, warnings, skipped, lookups, notes=notes, missing_cnv=missing_cnv)
 
 
 # ----------------------------------------------------------------------------- applying
@@ -382,6 +436,22 @@ def apply_plan(df: pd.DataFrame, plan: Plan) -> tuple[pd.DataFrame, pd.DataFrame
         if fp is None:
             continue
         codes = df[col].map(code_of)
+        if fp.switch is not None and fp.switch[0] in df.columns:
+            sw_col, tables = fp.switch
+            sw = df[sw_col].map(code_of)
+            plans_by = {k: FieldPlan(col, t, fp.start) for k, t in tables.items()}
+            pair_cache: dict[tuple[str, str], str] = {}
+            labels = []
+            for c, k in zip(codes, sw):
+                key = (c, k)
+                if key not in pair_cache:
+                    pair_cache[key] = label_for(c, plans_by.get(k, fp))
+                labels.append(pair_cache[key])
+            out_cols[f"{col}_rotulo"] = pd.Series(labels, index=df.index)
+            for k, t in tables.items():
+                add_dict(col, t, f"rótulo ({sw_col} = {k})")
+            add_dict(col, fp.cnv, f"rótulo ({sw_col} com outro valor)")
+            continue
         uniq = {c: label_for(c, fp) for c in codes.unique()}
         out_cols[f"{col}_rotulo"] = codes.map(uniq)
         add_dict(col, fp.cnv, "rótulo", uniq.keys())

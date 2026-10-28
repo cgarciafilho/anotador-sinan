@@ -6,6 +6,22 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
 
 ## [Não lançado]
 
+### Adicionado
+- Nomes reais de export do Sinan NET reconhecidos pelo nome: `SIFICNET` (sífilis congênita), `LEISHNET` (leishmaniose
+  visceral) e `MENINNET` (meningite), além dos já conhecidos.
+- Tabela `.cnv` que o `.def` cita e o pacote do TabWin não tem: quando o dicionário de dados do agravo em `tabelas/dicionarios/`
+  traz as categorias copiadas dela (`categorias_cnv`), o programa reconstrói a tabela e rotula o campo; a aba `dicionario`
+  marca "reconstruída de dicionario_hans.csv". Vale hoje para `ESQ_INI_N` e `ESQ_ATU_N` de hanseníase (`ESQUETER.CNV`,
+  `ESQUETERatu.CNV`). O log passa a listar numa linha só as tabelas ausentes, para copiar do TabWin.
+- Hanseníase, `DOSE_RECEB`: a tabela de rótulos é escolhida registro a registro por `CLASSOPERA` (1 → `nudosePB.cnv`,
+  2 → `nudoseMB.cnv`, demais → `nudoses.cnv`), em vez de usar a de paucibacilar para todos.
+- Duplicidades no perfil agudo: o tipo sugerido traz o intervalo em faixas (`mesmo dia`, `1 a 7 dias`, `8 a 30 dias`,
+  `31 a 90 dias`, `91 a 365 dias`, `mais de 365 dias`) com os dias exatos entre parênteses; o log conta por faixa, não por
+  valor (eram 425 linhas no LEISHNET real). Intervalo maior do que o período coberto pela própria base (mais um ano) vira
+  `data implausível? … conferir as datas`: erro de digitação numa das datas, não "mesma pessoa".
+- `AVISO` no log quando `NM_PACIENT` está em branco na metade ou mais dos registros (MENINNET real: 5.902 de 5.902), porque
+  sem nome nenhuma chave de duplicidade funciona.
+
 ### Corrigido
 - Sífilis congênita: o Sinan NET exporta a base como `SIFICNET.DBF`, mas o programa só conhecia `SIFCNET` (o padrão `Sifc*.DB?`
   do `SifilisNET.def` do TabWin). O nome não era reconhecido e a escolha caía no conjunto de campos, que elegia
@@ -16,6 +32,16 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
   `DS_OBS` e outros campos longos do Sinan, faziam o openpyxl recusar a célula (`IllegalCharacterError`) e a execução inteira
   falhava no último passo, depois da anotação e das duplicidades prontas. Agora são removidos ao gravar e o log avisa quantas
   células e em quais colunas (`AVISO: N células continham caracteres de controle…`).
+- Campos que o DBF e o `.def` escrevem diferente: `BACILOSCO` (DBF) é `BACILOSCOP` no `HansNET.def`, `DT_DESC3` (DBF) é
+  `DT_DES3` no `LeishtegNET.def`. Antes saíam "sem rótulo" e "sem nome por extenso"; agora o campo é rotulado e nomeado pelo
+  nome do `.def`.
+- Tabela externa `UNIDINVEST.dbf` lida também para campos cujo nome não é coluna dela (`ATE_HOSP_1` em meningite,
+  `PRE_UNIPRE` em sífilis em gestante): a coluna de código passa a ser a primeira `ID_`/`CO_`/`CD_` da tabela, com nota no
+  log. Some o aviso enganoso "não pôde ser lida: sem a coluna …".
+- `BAIRRNET.DBF` vem vazia no `TAB_SINANNET.zip`: deixa de ser `AVISO` e vira nota por campo ("vem vazia no pacote do
+  TabWin; o nome do bairro já vem em NM_BAIRRO").
+- Nome por extenso vindo do dicionário de outro agravo só quando os dicionários concordam sobre o campo (mesma primeira
+  palavra); `TRATAMENTO` é "Tipo de Entrada" em TB e uma data em LV, e para um terceiro agravo nenhum dos dois é usado.
 
 ## [0.3.0] — 2026-10-28
 

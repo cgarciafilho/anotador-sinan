@@ -451,3 +451,44 @@ coluna; sem aviso quando não há nada a limpar); suíte completa 166 passados, 
 (49 campos, `\x00\x1a` injetado em `NM_PACIENT`): nome reconhecido, 34 de 49 campos rotulados, aviso de 1 célula, `RESULTADO: OK`;
 renomeado para `EXPORT.DBF`, a escolha por campos acerta SifilisNET. Limite: não foi rodado na base real do usuário; os 7 campos
 `CRI_*` do `.def` que o DBF não tem continuam só sem rótulo, como antes.
+
+### 2026-10-28 — Cinco bases reais (HANSNET, LEISHNET, LTANET, MENINNET, SIFGENET): o que os logs mostraram e o que mudou
+Contexto: logs da 0.3.0 no Windows do usuário, todos `RESULTADO: OK`, cp1252 em todos, linhas gravadas iguais às lidas.
+Achados, por ordem de importância, e decisões:
+1. MENINNET: `NM_PACIENT` existe e está em branco nos 5.902 registros; 0 pares e só a linha "sem nome 5902" no fim do bloco.
+   Inferência: export sem identificação. Decisão: `AVISO` explícito quando o nome falta em metade ou mais dos registros.
+   O DBF não foi aberto aqui; cabe ao usuário confirmar a causa.
+2. LEISHNET e LTANET: pares com 17.399 a 23.443 dias entre `DT_SIN_PRI` (47 a 64 anos), impossíveis numa base que começa com
+   os migrados do Sinan Windows. Decisão: limite = amplitude de `DT_NOTIFIC` da própria base + 366 dias
+   (`IMPLAUSIBLE_MARGIN_DAYS`); acima dele o tipo é `data implausível? … conferir as datas`. Alternativa descartada: corte
+   fixo (1993, início do Sinan), porque depende de saber a história de cada base; a amplitude observada vale para qualquer
+   arquivo. Limite: erro de data dentro da amplitude (2015 por 2025) continua invisível.
+3. LEISHNET: 425 linhas "mesma pessoa, N dias" no log, uma por valor. Decisão: faixas 0 / 1–7 / 8–30 / 31–90 / 91–365 /
+   >365 no rótulo e na contagem do log; os dias exatos ficam entre parênteses e na coluna `dias_entre_eventos`. As faixas
+   são de leitura, não de regra: os manuais não dão corte para os agudos (MANUAL §4.5).
+4. `.cnv` ausentes no `TAB_SINANNET.zip`: hanseníase `ESQUETER.CNV`/`ESQUETERatu.CNV`; meningite 9 tabelas (critério,
+   etiologia, evolução, aspecto do líquor…). O FTP do DATASUS não é alcançável do ambiente de desenvolvimento. Decisão: usar
+   `categorias_cnv` do dicionário do agravo (copiada do `.cnv` real na extração, coluna `fonte_categorias` = "pdf + cnv:…")
+   para reconstruir a tabela em memória; resolve hanseníase. Meningite fica sem rótulo nesses campos até alguém copiar as
+   tabelas do TabWin ou extrair o dicionário de meningite; o log passa a listar as tabelas numa linha. Alternativa descartada:
+   escrever as `.cnv` de meningite de memória (sem fonte verificável; rótulo errado é pior que nenhum).
+5. HANSNET `DOSE_RECEB`: três tabelas no `.def` (PB, MB, detalhada); a 0.3.0 usava a primeira (PB) para todos, e "6 doses"
+   só é esquema completo em paucibacilar. Levantamento em todos os 58 `.def`: só dois campos têm mais de uma tabela de
+   categorias (`DOSE_RECEB` e `EVOLUCAO` do NotIndiviNet). Decisão: regra explícita por campo (`TABLE_SWITCH`): tabela
+   escolhida por `CLASSOPERA` em cada registro; `EVOLUCAO` genérico continua na primeira. Alternativa descartada: "a tabela
+   com mais categorias", que escolheria a tabela de LTA para a evolução da notificação genérica.
+6. Nomes divergentes DBF × `.def`: `BACILOSCO`/`BACILOSCOP` (hanseníase), `DT_DESC3`/`DT_DES3` (LTA). Decisão: tabela de
+   aliases em `cnv.py`, aplicada no plano, na lista "não descreve" do log e nos nomes por extenso.
+7. Avisos enganosos: `UNIDINVEST.dbf` "sem a coluna ATE_HOSP_1/PRE_UNIPRE" (a tabela é boa, o código está em `ID_UNIDADE`) e
+   `BAIRRNET.DBF` "tabela vazia" (194 bytes, só cabeçalho, em todo arquivo). Decisão: coluna de código cai para a primeira
+   `ID_`/`CO_`/`CD_` com nota; tabela vazia vira nota por campo citando `NM_BAIRRO`.
+8. Nomes por extenso de dicionário alheio: 15 campos têm nome diferente entre os quatro CSVs; 13 são paráfrases, dois são
+   homônimos de sentido diferente (`TRATAMENTO`, `HIV`). Decisão: para agravo sem dicionário próprio, o nome de outro CSV só
+   vale se todos os CSVs que o definem concordam na primeira palavra; senão fica o rótulo do `.def`.
+9. `LEISHNET` e `MENINNET` reconhecidos pelo padrão `A` do `.def`, não pelo nome; entram na tabela de nomes conhecidos.
+Verificação: testes novos em `test_annotate.py` (aliases, tabela reconstruída do CSV com e sem CSV, `DOSE_RECEB` por
+`CLASSOPERA` com rótulos por registro), `test_lookup.py` (coluna de código alternativa), `test_names.py` (concordância entre
+dicionários, alias), `test_duplicates.py` (faixas nos dez limites, data implausível com `DT_SIN_PRI` de 1960 numa base
+2020–2024, aviso de nome em branco); `test_manual.py` obriga os rótulos novos a constar do manual. Ponta a ponta com
+HANSNET, LEISHNET e MENINNET sintéticos: reconhecidos pelo nome; log com as notas de ESQ_INI_N/ESQ_ATU_N, DOSE_RECEB e a
+linha das tabelas ausentes; UNIDINVEST lida para ATE_HOSP_1. Não rodado nas bases reais.

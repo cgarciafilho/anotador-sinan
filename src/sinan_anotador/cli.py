@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import __version__
+from .cnv import def_field
 from .annotate import apply_plan, build_plan, detect_def, field_table, tab_dir_default
 from .names import resolve_names
 from .dbf import read_dbf
@@ -72,13 +73,13 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
             annotated, dictionary = df, pd.DataFrame(columns=["campo", "tabela", "codigos", "rotulo", "uso"])
             n_lab = 0
         else:
-            plan = build_plan(deffile, list(df.columns), info.field_types, tab_dir)
+            plan = build_plan(deffile, list(df.columns), info.field_types, tab_dir, csv_dir)
             annotated, dictionary = apply_plan(df, plan)
             n_lab = len(plan.fields) + (1 if plan.age_band is not None else 0)
             log(f"Campos rotulados: {n_lab} de {len(df.columns)}"
                 + (f" (idade em anos em {plan.age_field}_anos)" if plan.age_field else "")
                 + f" — anotação em {time.time() - t_read:.1f} s")
-            outside = [c for c in df.columns if c.upper() not in deffile.fields]
+            outside = [c for c in df.columns if def_field(c) not in deffile.fields]
             if outside:
                 log(f"  Campos do DBF que o .def não descreve ({len(outside)}), copiados sem rótulo: {', '.join(outside)}")
             for name, t in plan.lookups.items():
@@ -91,6 +92,12 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
                     f"sem rótulo {miss_n} ({pct}; {miss_k} códigos distintos)")
             for w in plan.warnings:
                 log(f"  AVISO {w}")
+            for nt in plan.notes:
+                log(f"  {nt}")
+            if plan.missing_cnv:
+                log(f"  Tabelas .cnv citadas no .def e ausentes em {tab_dir.name} ({len(plan.missing_cnv)}): "
+                    f"{', '.join(sorted(plan.missing_cnv, key=str.lower))} — copie-as da pasta de tabelas do TabWin do Sinan NET "
+                    f"para {tab_dir}")
             absent = [s.split(":")[0] for s in plan.skipped if s.endswith("não no DBF")]
             others = [s for s in plan.skipped if not s.endswith("não no DBF")]
             if absent:

@@ -1,6 +1,6 @@
 import pytest
 
-from sinan_anotador.annotate import (KNOWN_DBF_PREFIXES, FieldPlan, age_years, build_plan, code_of, detect_def,
+from sinan_anotador.annotate import (KNOWN_DBF_PREFIXES, FieldPlan, age_years, apply_plan, build_plan, code_of, detect_def,
                                      label_for)
 from sinan_anotador.cnv import parse_cnv, parse_def
 
@@ -104,4 +104,53 @@ def test_build_plan_tb(tab_dir):
     assert plan.fields["ID_UNID_AT"].cnv.name == "UNIDINVEST.DBF" and [t.name for t in plan.fields["ID_UNID_AT"].fallbacks] == ["unidanet.csv", "UNIDANET.DBF"]
     assert plan.fields["ID_OCUPA_N"].cnv.name == "OCUPANET.DBF"
     assert "ID_BAIRRO" not in plan.fields                 # BAIRRNET.DBF ships empty
-    assert any(w.startswith("tabela externa BAIRRNET.DBF") for w in plan.warnings)   # ships empty -> refused
+    assert not any("BAIRRNET" in w for w in plan.warnings)      # ships empty: not an AVISO, a per-field note
+    assert any(s.startswith("ID_BAIRRO: tabela externa bairrnet.dbf vem vazia") for s in plan.skipped), plan.skipped
+
+
+def test_dbf_field_aliases_plan_and_outside_list(tab_dir):
+    """HANSNET.DBF exports BACILOSCO where HansNET.def says BACILOSCOP (2026-10-28): the column is planned under its own
+    name and labelled with POSNEG.CNV; LTANET's DT_DESC3 is the .def's DT_DES3 (a date: no label, but not 'unknown')."""
+    d = parse_def(tab_dir / "HansNET.def")
+    plan = build_plan(d, ["BACILOSCO", "CS_SEXO"], {"BACILOSCO": "C", "CS_SEXO": "C"}, tab_dir)
+    assert plan.fields["BACILOSCO"].cnv.name.upper() == "POSNEG.CNV"
+    assert not any(s.startswith("BACILOSCOP:") for s in plan.skipped)
+    from sinan_anotador.cnv import def_field
+    assert def_field("BACILOSCO") == "BACILOSCOP" and def_field("DT_DESC3") == "DT_DES3" and def_field("cs_sexo") == "CS_SEXO"
+
+
+def test_missing_cnv_rebuilt_from_dictionary_csv(tab_dir):
+    """ESQUETER.CNV / ESQUETERatu.CNV are cited by HansNET.def and absent from TAB_SINANNET.zip; dicionario_hans.csv carries
+    their categories (categorias_cnv), so ESQ_INI_N and ESQ_ATU_N get labels and the log says where they came from."""
+    d = parse_def(tab_dir / "HansNET.def")
+    cols = ["ESQ_INI_N", "ESQ_ATU_N", "CS_SEXO"]
+    plan = build_plan(d, cols, {c: "C" for c in cols}, tab_dir)
+    fp = plan.fields["ESQ_INI_N"]
+    assert fp.cnv.name.startswith("ESQUETER.CNV (reconstruída de dicionario_hans.csv)")
+    assert label_for("1", fp) == "PQT/PB/6 DOSES" and label_for("2", fp) == "PQT/MB/12 DOSES"
+    assert label_for("0", fp) == "Ign/Branco" and label_for("", fp) == "Ign/Branco" or label_for("", fp) == "[em branco]"
+    assert plan.fields["ESQ_ATU_N"].cnv.name.startswith("ESQUETERatu.CNV (reconstruída")
+    assert {"ESQUETER.CNV", "ESQUETERatu.CNV"} <= plan.missing_cnv
+    assert any(n.startswith("ESQ_INI_N: tabela ESQUETER.CNV ausente") for n in plan.notes), plan.notes
+    assert not any("ESQ_INI_N" in w for w in plan.warnings)
+    # without the CSV the field stays unlabelled and the table is still listed as missing
+    plan2 = build_plan(d, cols, {c: "C" for c in cols}, tab_dir, csv_dir=tab_dir / "nenhum")
+    assert "ESQ_INI_N" not in plan2.fields and "ESQUETER.CNV" in plan2.missing_cnv
+    assert any(w.startswith("ESQ_INI_N: tabela ESQUETER.CNV citada no .def não está disponível") for w in plan2.warnings)
+
+
+def test_dose_recebida_table_switches_on_classopera(tab_dir):
+    """DOSE_RECEB has three tables in HansNET.def; '6 doses' is the full scheme only for paucibacillary cases, so the table
+    follows CLASSOPERA in each record (1 -> nudosePB, 2 -> nudoseMB, other -> plain count)."""
+    import pandas as pd
+    d = parse_def(tab_dir / "HansNET.def")
+    cols = ["DOSE_RECEB", "CLASSOPERA"]
+    plan = build_plan(d, cols, {"DOSE_RECEB": "N", "CLASSOPERA": "C"}, tab_dir)
+    fp = plan.fields["DOSE_RECEB"]
+    assert fp.switch is not None and fp.switch[0] == "CLASSOPERA" and fp.cnv.name.lower() == "nudoses.cnv"
+    assert not any("DOSE_RECEB" in w for w in plan.warnings)
+    assert any(n.startswith("DOSE_RECEB: tabela escolhida por CLASSOPERA") for n in plan.notes), plan.notes
+    df = pd.DataFrame({"DOSE_RECEB": ["06", "06", "12", "12", "03", ""], "CLASSOPERA": ["1", "2", "2", "1", "9", "1"]})
+    out, dic = apply_plan(df, plan)
+    assert out["DOSE_RECEB_rotulo"].tolist() == ["6 doses", "<12", "12 doses", "maior que 6", "03", "não preenchido/Ign"]
+    assert set(dic[dic["campo"] == "DOSE_RECEB"]["tabela"].str.lower()) == {"nudosepb.cnv", "nudosemb.cnv", "nudoses.cnv"}

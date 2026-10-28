@@ -31,6 +31,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
+# DBF column -> field name in the TabWin .def, where the two differ (HANSNET exports BACILOSCO, HansNET.def says BACILOSCOP;
+# LTANET exports DT_DESC3, LeishtegNET.def says DT_DES3; bases reais, 2026-10-28)
+DBF_FIELD_ALIASES = {"BACILOSCO": "BACILOSCOP", "DT_DESC3": "DT_DES3"}
+
+
+def def_field(column: str) -> str:
+    """The .def field name for a DBF column (the column itself unless it has an alias)."""
+    return DBF_FIELD_ALIASES.get(column.upper(), column.upper())
+
+
 def read_latin1(path: Path) -> list[str]:
     return Path(path).read_text(encoding="latin-1").splitlines()
 
@@ -103,33 +113,51 @@ def parse_cnv(path: Path) -> Cnv:
         if not m:
             continue
         label, raw_codes = split_category_line(line, m)
-        cnv.categories.append((raw_codes.strip(), label))
-        tokens = [t.strip() for t in raw_codes.split(",")]
-        if len(tokens) > 1 and tokens[-1] == "" and any(tokens[:-1]):
-            tokens = tokens[:-1]        # trailing comma (`06, 6,6 ,` in nudosePB.cnv) is not a blank category
-        for tok in tokens:
-            lo = hi = None
-            if tok == "":
-                rule = CnvRule(order, label, "", None, None)
-                cnv._blank = rule
-                cnv.rules.append(rule)
-                continue
-            if re.fullmatch(r"\d+-\d+", tok):
-                a, b = tok.split("-")
-                lo, hi = int(a), int(b)
-                rule = CnvRule(order, label, tok, lo, hi)
-                cnv._ranges.append(rule)
-            elif tok.isdigit():
-                rule = CnvRule(order, label, tok, int(tok), int(tok))
-                cnv._numeric[int(tok)] = rule
-                cnv._exact[tok] = rule
-            else:
-                rule = CnvRule(order, label, tok, None, None)
-                cnv._exact[tok] = rule
-            cnv.rules.append(rule)
+        add_category(cnv, order, label, raw_codes)
         order += 1
     if not header_seen:
         raise ValueError(f"{path.name}: arquivo vazio ou sem cabeçalho")
+    return cnv
+
+
+def add_category(cnv: Cnv, order: int, label: str, raw_codes: str) -> None:
+    """Append one category line (label + comma-separated code tokens, as written in a .cnv) to `cnv`."""
+    cnv.categories.append((raw_codes.strip(), label))
+    tokens = [t.strip() for t in raw_codes.split(",")]
+    if len(tokens) > 1 and tokens[-1] == "" and any(tokens[:-1]):
+        tokens = tokens[:-1]        # trailing comma (`06, 6,6 ,` in nudosePB.cnv) is not a blank category
+    for tok in tokens:
+        if tok == "":
+            rule = CnvRule(order, label, "", None, None)
+            cnv._blank = rule
+            cnv.rules.append(rule)
+            continue
+        if re.fullmatch(r"\d+-\d+", tok):
+            a, b = tok.split("-")
+            rule = CnvRule(order, label, tok, int(a), int(b))
+            cnv._ranges.append(rule)
+        elif tok.isdigit():
+            rule = CnvRule(order, label, tok, int(tok), int(tok))
+            cnv._numeric[int(tok)] = rule
+            cnv._exact[tok] = rule
+        else:
+            rule = CnvRule(order, label, tok, None, None)
+            cnv._exact[tok] = rule
+        cnv.rules.append(rule)
+
+
+def cnv_from_categories(name: str, categories: list[tuple[str, str]], path: Path | None = None) -> Cnv:
+    """A Cnv built in memory from (codes, label) pairs written like .cnv code lists ("0-9", "1", "01-05,1-5"); the width
+    is the longest numeric token. Used when a .cnv the .def cites is missing but a dictionary CSV lists the categories."""
+    cnv = Cnv(name=name, path=path or Path(name), width=0)
+    width = 0
+    for order, (codes, label) in enumerate(categories):
+        add_category(cnv, order, label, codes)
+        for tok in re.split(r"[,\-]", codes):
+            tok = tok.strip()
+            if tok:
+                width = max(width, len(tok))
+    cnv.width = width
     return cnv
 
 

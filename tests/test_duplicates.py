@@ -11,7 +11,7 @@ from sinan_anotador.cli import annotate_file
 from sinan_anotador.cnv import parse_def
 import pandas as pd
 
-from sinan_anotador.duplicates import Profile, birth_one_component_off, classify, load_ads, norm_name, similar
+from sinan_anotador.duplicates import Profile, birth_one_component_off, build_tables, classify, load_ads, norm_name, similar
 from synthetic_dups import make_synthetic_dups
 
 AGRAVOS = {"TUBENET": "TuberculNET5_0", "HANSNET": "HansNET", "SIFGENET": "GestSifNET", "DENGNET": "DengueNET"}
@@ -238,3 +238,44 @@ def test_ads_outside_ceara_falls_back_to_sinan_regional_or_blank(tab_dir, tmp_pa
     ads_a = [r["ADS_notificacao_A"] for r in short]
     first_none = ads_a.index(None)
     assert all(v is None for v in ads_a[first_none:])                      # pairs without ADS come last
+
+
+@pytest.mark.parametrize("days,band", [(0, "mesmo dia"), (1, "1 a 7 dias"), (7, "1 a 7 dias"), (8, "8 a 30 dias"), (30, "8 a 30 dias"),
+                                       (31, "31 a 90 dias"), (90, "31 a 90 dias"), (91, "91 a 365 dias"), (365, "91 a 365 dias"),
+                                       (366, "mais de 365 dias")])
+def test_acute_intervals_are_banded(days, band):
+    prof = Profile("agudo", "DT_SIN_PRI")
+    a = pd.Series({"DT_SIN_PRI": pd.Timestamp("2024-01-01")})
+    b = pd.Series({"DT_SIN_PRI": pd.Timestamp("2024-01-01") + pd.Timedelta(days=days)})
+    label, _ = classify(a, b, prof, False, "igual")
+    assert label == f"mesma pessoa, {band} ({days} dias entre eventos, DT_SIN_PRI): duplicidade se for o mesmo evento", label
+
+
+def test_acute_interval_beyond_base_span_is_a_date_error(tmp_path):
+    """LEISHNET/LTANET (2026-10-28): pairs 17,399 to 23,443 days apart, i.e. a typo in one DT_SIN_PRI; above the base's
+    own span of DT_NOTIFIC plus a year the pair is flagged for the dates, not banded as 'mesma pessoa'."""
+    from sinan_anotador.duplicates import implausible_after
+    rows = []
+    for i, (notif, sin) in enumerate([("2020-03-01", "2020-02-20"), ("2023-05-10", "2023-05-01"), ("2024-01-15", "1960-01-10"),
+                                     ("2024-02-01", "2024-01-25")]):
+        rows.append({"NU_NOTIFIC": f"{i:07d}", "NM_PACIENT": "JOAO DA SILVA", "NM_MAE_PAC": "MARIA DA SILVA",
+                     "DT_NASC": pd.Timestamp("1990-05-05"), "CS_SEXO": "M", "DT_NOTIFIC": pd.Timestamp(notif),
+                     "DT_SIN_PRI": pd.Timestamp(sin), "ID_MUNICIP": "230440", "ID_MN_RESI": "230440", "ID_UNIDADE": "1"})
+    df = pd.DataFrame(rows)
+    assert implausible_after(df) == (pd.Timestamp("2024-02-01") - pd.Timestamp("2020-03-01")).days + 366
+    full, short, st = build_tables(df, list(df.columns), "DengueNET")
+    labels = full["tipo_sugerido"].tolist()
+    assert any(l.startswith("data implausível? (") and "conferir as datas" in l for l in labels), labels
+    assert any(l.startswith("mesma pessoa, ") for l in labels), labels
+    assert st["max_days"] == implausible_after(df)
+    assert "data implausível?" in st["by_label"]
+
+
+def test_blank_names_raise_a_warning_in_the_log():
+    """MENINNET.DBF (2026-10-28): NM_PACIENT present but blank in every record -> 0 pairs and an AVISO, not silence."""
+    df = pd.DataFrame({"NU_NOTIFIC": ["1", "2"], "NM_PACIENT": ["", None], "DT_NASC": [pd.Timestamp("2000-01-01")] * 2,
+                       "CS_SEXO": ["F", "F"], "DT_NOTIFIC": [pd.Timestamp("2024-01-01")] * 2})
+    log: list[str] = []
+    full, short, st = build_tables(df, list(df.columns), "MeningeNET", log)
+    assert st["pairs"] == 0 and st["sem_chave"]["sem_nome"] == 2
+    assert any(l.startswith("AVISO: NM_PACIENT em branco em 2 de 2 registros") for l in log), log

@@ -75,3 +75,22 @@ def test_form_table_beats_foreign_csv(tab_dir):
     assert r["CLASSI_FIN"].name == "Classificação final" and r["CLASSI_FIN"].source.startswith("dicionário CSV")
     tb = resolve_names(["CS_SEXO", "ID_REGIONA"], parse_def(tab_dir / "TuberculNET5_0.def"), tab_dir)
     assert tb["CS_SEXO"].source == "dicionário CSV (dicionario_tuberculose.csv)"      # own CSV wins over the form table
+
+
+def test_foreign_csv_names_need_agreement(tab_dir):
+    """A field named only by other diseases' CSVs is used when they agree (first word); TRATAMENTO ('Tipo de Entrada' in TB,
+    a date in VL) is dropped for a third disease, and the .def label stands in. Own CSV still wins for its disease."""
+    from sinan_anotador.names import load_csv_dictionaries
+    folder = tab_dir.parent / "dicionarios"
+    dengue = load_csv_dictionaries(folder, "DengueNET")
+    assert "TRATAMENTO" not in dengue and "HIV" not in dengue
+    assert dengue["ID_OCUPA_N"][0].startswith("Ocupação")          # all four CSVs start with the same word
+    assert load_csv_dictionaries(folder, "TuberculNET5_0")["TRATAMENTO"][0] == "Tipo de Entrada"
+
+
+def test_alias_column_gets_def_name(tab_dir):
+    """BACILOSCO (DBF) is BACILOSCOP in HansNET.def and in dicionario_hans.csv; the name follows the alias."""
+    r = resolve_names(["BACILOSCO", "DT_DESC3"], parse_def(tab_dir / "HansNET.def"), tab_dir)
+    assert r["BACILOSCO"].name and "bacilosc" in r["BACILOSCO"].name.lower(), r["BACILOSCO"]
+    r2 = resolve_names(["DT_DESC3"], parse_def(tab_dir / "LeishtegNET.def"), tab_dir)
+    assert r2["DT_DESC3"].name and "desloc" in r2["DT_DESC3"].name.lower(), r2["DT_DESC3"]

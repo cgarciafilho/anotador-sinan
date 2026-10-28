@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import csv
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
-from .cnv import DefFile, parse_def
+from .cnv import DefFile, def_field, parse_def
 
 # Sinan NET individual notification form (ficha de notificação/investigação, campos 1-30 e de controle).
 NOTIFICATION_FORM = {
@@ -126,6 +127,7 @@ def load_csv_dictionaries(folder: Path | None, def_name: str | None = None) -> d
     files = sorted(Path(folder).glob("*.csv"))
     own = DEF_TO_CSV.get(def_name or "")
     files.sort(key=lambda p: (p.stem != own, p.name.lower()))
+    seen: dict[str, list[tuple[str, str]]] = {}      # field -> every (name, file) that defines it, own file first
     for p in files:
         try:
             text = p.read_text(encoding="utf-8-sig")
@@ -148,7 +150,66 @@ def load_csv_dictionaries(folder: Path | None, def_name: str | None = None) -> d
                 k = (r.get(kc) or "").strip().upper()
                 if k:
                     names.setdefault(k, (name, p.name))
+                    seen.setdefault(k, []).append((name, p.name))
+    # a field named only by other diseases' CSVs is used only when those CSVs agree on what it is (same first word):
+    # TRATAMENTO is 'Tipo de Entrada' in TB and a date in VL, so for a third disease neither name is trusted
+    for k, entries in seen.items():
+        if entries[0][1] == f"{own}.csv":
+            continue
+        heads = {_first_word(n) for n, _ in entries}
+        if len(heads) > 1:
+            del names[k]
     return names
+
+
+def _first_word(name: str) -> str:
+    w = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    return re.split(r"[^a-z0-9]+", w.strip())[0] if w.strip() else ""
+
+
+def load_csv_categories(folder: Path | None, def_name: str | None) -> dict[str, tuple[list[tuple[str, str]], str]]:
+    """field -> (categories as (codes, label) pairs, csv file) from the disease's OWN dictionary CSV: column
+    `categorias_cnv` ("0-9=Ign/Branco;1=PQT/PB/6 DOSES;...", copied from the .cnv when the dictionary was extracted), else
+    `categorias`. A fallback for .cnv files the .def cites but the TabWin package lacks (ESQUETER.CNV, 2026-10-28)."""
+    out: dict[str, tuple[list[tuple[str, str]], str]] = {}
+    own = DEF_TO_CSV.get(def_name or "")
+    if not folder or not own:
+        return out
+    p = Path(folder) / f"{own}.csv"
+    if not p.is_file():
+        return out
+    try:
+        text = p.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError:
+        text = p.read_text(encoding="latin-1")
+    rows = list(csv.DictReader(text.splitlines()))
+    if not rows:
+        return out
+    cols = {c.lower(): c for c in rows[0].keys() if c}
+    key_cols = [cols[c] for c in ("variavel_dbf_observado", "variavel", "campo") if c in cols]
+    for r in rows:
+        spec = ""
+        for c in ("categorias_cnv", "categorias"):
+            if c in cols and (r.get(cols[c]) or "").strip():
+                spec = r[cols[c]].strip()
+                break
+        if not spec or "=" not in spec:
+            continue
+        cats: list[tuple[str, str]] = []
+        for part in spec.split(";"):
+            if "=" not in part:
+                continue
+            codes, label = part.split("=", 1)
+            codes, label = codes.strip(), " ".join(label.split())
+            if codes and label and re.fullmatch(r"[0-9A-Za-z_\-, ]+", codes):
+                cats.append((codes, label))
+        if not cats:
+            continue
+        for kc in key_cols:
+            k = (r.get(kc) or "").strip().upper()
+            if k:
+                out.setdefault(k, (cats, p.name))
+    return out
 
 
 def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, preferred_cnv: dict[str, str] | None = None,
@@ -158,7 +219,7 @@ def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, pr
     own = labels_from_def(deffile, preferred_cnv) if deffile else {}
     others: dict[str, str] = {}
     out: dict[str, FieldName] = {}
-    pending = [c for c in columns if c.upper() not in csv_names and c.upper() not in own
+    pending = [c for c in columns if c.upper() not in csv_names and def_field(c) not in own
                and c.upper() not in NOTIFICATION_FORM]
     if pending:
         defs = sorted(Path(tab_dir).glob("*.def"), key=lambda p: (p.stem != "NotIndiviNet", p.stem.lower()))
@@ -167,7 +228,7 @@ def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, pr
                 continue
             for f, n in labels_from_def(parse_def(p)).items():
                 others.setdefault(f, n)
-            if all(c.upper() in others for c in pending):
+            if all(def_field(c) in others for c in pending):
                 break
     raw_def: dict[str, str] = {}
     if deffile:
@@ -180,16 +241,19 @@ def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, pr
     own_csv = f"{DEF_TO_CSV.get(deffile.name, '')}.csv" if deffile else ""
     for c in columns:
         k = c.upper()
+        kd = def_field(c)           # the .def may spell the field differently (BACILOSCO -> BACILOSCOP)
         # a CSV of another disease names the shared notification fields with extraction noise ("Semana epidemiológic a");
         # for those fields the form table wins unless the CSV is the disease's own
         if k in csv_names and (k not in NOTIFICATION_FORM or csv_names[k][1] == own_csv):
-            out[c] = FieldName(c, csv_names[k][0], f"{SOURCE_CSV} ({csv_names[k][1]})", raw_def.get(k))
+            out[c] = FieldName(c, csv_names[k][0], f"{SOURCE_CSV} ({csv_names[k][1]})", raw_def.get(kd))
+        elif kd in csv_names and kd != k:
+            out[c] = FieldName(c, csv_names[kd][0], f"{SOURCE_CSV} ({csv_names[kd][1]})", raw_def.get(kd))
         elif k in NOTIFICATION_FORM:
-            out[c] = FieldName(c, NOTIFICATION_FORM[k], SOURCE_FORM, raw_def.get(k))
-        elif k in own:
-            out[c] = FieldName(c, own[k], SOURCE_DEF, raw_def.get(k))
-        elif k in others:
-            out[c] = FieldName(c, others[k], SOURCE_OTHER_DEF, raw_def.get(k))
+            out[c] = FieldName(c, NOTIFICATION_FORM[k], SOURCE_FORM, raw_def.get(kd))
+        elif kd in own:
+            out[c] = FieldName(c, own[kd], SOURCE_DEF, raw_def.get(kd))
+        elif kd in others:
+            out[c] = FieldName(c, others[kd], SOURCE_OTHER_DEF, raw_def.get(kd))
         else:
-            out[c] = FieldName(c, None, None, raw_def.get(k))
+            out[c] = FieldName(c, None, None, raw_def.get(kd))
     return out

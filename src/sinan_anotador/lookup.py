@@ -74,6 +74,12 @@ def _pick_columns(columns: list[str], code_field: str, name_field: str, notes: l
     up = {c.upper(): c for c in columns}
     code = up.get(code_field.upper()) or up.get("CODIGO") or up.get("CO_CNES") or up.get("COD")
     name = up.get(name_field.upper()) or up.get("NOME") or up.get("NO_FANTASIA") or up.get("DESCRICAO")
+    if code is None and name is not None:
+        # the .def names the code column after the DBF field (ATE_HOSP_1, PRE_UNIPRE, ID_UNID_AT...), but UNIDINVEST.dbf
+        # keys every unit on ID_UNIDADE: the first ID_/CO_/CD_ column is the code column of the table
+        code = next((c for c in columns if c.upper().startswith(("ID_", "CO_", "CD_"))), None)
+        if code is not None:
+            notes.append(f"coluna {code_field} ausente; códigos lidos de {code}")
     if code is None or name is None:
         if len(columns) == 2:        # a bare two-column table (code, name) is unambiguous
             code, name = columns

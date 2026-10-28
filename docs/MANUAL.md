@@ -103,6 +103,13 @@ Quem prefere linha de comando, ou roda em Linux, encontra as instruções no [RE
   que abrevia ("Situação Encerra."). A aba `campos` diz de onde veio cada nome.
 - **Código que não está na tabela** aparece como "[código] sem rótulo". **Campo vazio** aparece como "Ign/Branco" ou com
   o rótulo de branco da própria tabela, quando ela tem um.
+- **Tabela que falta no pacote do TabWin.** Quando o `.def` cita um `.cnv` que não veio no pacote (hanseníase:
+  `ESQUETER.CNV`, esquema terapêutico), o programa usa as categorias copiadas no dicionário de dados em `app\dicionarios\`,
+  e a aba `dicionario` mostra a tabela como "reconstruída de dicionario_hans.csv". Sem dicionário do agravo (meningite:
+  critério de confirmação, etiologia, evolução), o campo fica sem rótulo e o log lista as tabelas a copiar do TabWin.
+- **Tabela escolhida registro a registro.** Em hanseníase, `DOSE_RECEB` (doses supervisionadas) é lida pela tabela de
+  paucibacilar ("6 doses" é o esquema completo) quando `CLASSOPERA` é 1, pela de multibacilar (12 doses) quando é 2, e
+  como número simples nos demais; a aba `dicionario` traz as três.
 - `NU_IDADE_N` (idade codificada do Sinan) ganha `NU_IDADE_N_anos` (idade em anos) e `NU_IDADE_N_rotulo` (faixa etária).
 - Município de notificação e de residência recebem o nome, sem o código na frente. Unidade de saúde recebe o nome atual do
   CNES e, para unidades desativadas, o nome da tabela do TabWin de 2021.
@@ -267,9 +274,15 @@ mostra a distância em dias entre as datas do evento e deixa o julgamento para q
 | Condição | Tipo sugerido |
 |---|---|
 | Falta a data do evento em um dos dois | `mesma pessoa; sem data do evento para comparar` |
-| Caso geral | `mesma pessoa, N dias entre eventos (DT_SIN_PRI): duplicidade se for o mesmo evento` |
+| Intervalo maior do que a base inteira cobre | `data implausível? (N dias entre eventos, DT_SIN_PRI; maior que o período coberto pela base: conferir as datas)` |
+| Caso geral | `mesma pessoa, 1 a 7 dias (N dias entre eventos, DT_SIN_PRI): duplicidade se for o mesmo evento` |
 
-O campo entre parênteses é o que foi comparado (seção 4.4). Orientações dos cadernos para a leitura dos dias:
+O campo entre parênteses é o que foi comparado (seção 4.4). O intervalo é dito em faixas (`mesmo dia`, `1 a 7 dias`,
+`8 a 30 dias`, `31 a 90 dias`, `91 a 365 dias`, `mais de 365 dias`), com o número exato de dias entre parênteses e na
+coluna `dias_entre_eventos`; é também por faixa que o log conta os pares. "Data implausível" é o par cujo intervalo passa
+do que a própria base cobre (a distância entre a notificação mais antiga e a mais recente do arquivo, mais um ano): são
+dezenas de anos entre dois primeiros sintomas da mesma pessoa, isto é, erro de digitação numa das datas, a corrigir no
+Sinan antes de julgar o par. Orientações dos cadernos para a leitura dos dias:
 
 - **Dengue, chikungunya, meningite, hepatites e os demais agudos:** poucos dias entre as datas de primeiros sintomas, mesma
   semana epidemiológica, é o caso típico de duplicidade; meses de distância sugerem episódios diferentes (outro sorotipo,
@@ -384,9 +397,13 @@ Nele estão:
 
 - a versão do programa (primeira linha);
 - a codificação detectada no DBF (cp850 ou cp1252) e o `.def` escolhido;
-- os campos sem tabela de rótulos e a cobertura de cada tabela externa (quantas unidades, ocupações e municípios ganharam nome);
+- os campos sem tabela de rótulos, as tabelas `.cnv` que o `.def` cita e o pacote não tem (a copiar do TabWin para
+  `app\tab_sinannet\`) e a cobertura de cada tabela externa (quantas unidades, ocupações e municípios ganharam nome);
 - "Duplicidades suspeitas: N pares (perfil X; padrao N, nome_mae N, nome_nasc1 N, nasc_nome_sim N; já julgados no Sinan N)",
-  a contagem por tipo sugerido, os registros que nenhuma chave alcança (seção 4.3) e a cobertura da tabela de ADS.
+  a contagem por tipo sugerido (nos agudos, por faixa de dias), os registros que nenhuma chave alcança (seção 4.3) e a
+  cobertura da tabela de ADS;
+- um `AVISO` quando o nome do paciente está em branco na metade ou mais dos registros: sem nome nenhuma chave funciona e a
+  aba de duplicidades sai vazia. Acontece quando o DBF foi exportado do Sinan sem os dados de identificação.
 
 ## 6. Perguntas frequentes
 

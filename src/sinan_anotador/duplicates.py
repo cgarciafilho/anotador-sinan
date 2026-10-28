@@ -24,6 +24,11 @@ MAX_BLOCK = 50                   # above this many records with the same key, on
 GESTATION_WINDOW_DAYS = 45 * 7   # diagnoses more than 45 weeks apart are different pregnancies (METODO 2026-10-26; SES-DF uses 12 months)
 TRANSFER_GAP_DAYS = 60           # a treatment that restarts within this many days of the previous closure is "the same treatment"
 KEYS = ("padrao", "nome_mae", "nome_nasc1", "nasc_nome_sim")
+# acute profile: the days between the two event dates are reported in bands (the sheet keeps the exact number); one log
+# line per distinct value made the LEISHNET log 425 lines long (2026-10-28)
+INTERVAL_BANDS = ((0, "mesmo dia"), (7, "1 a 7 dias"), (30, "8 a 30 dias"), (90, "31 a 90 dias"), (365, "91 a 365 dias"))
+INTERVAL_BAND_LAST = "mais de 365 dias"
+IMPLAUSIBLE_MARGIN_DAYS = 366   # an interval longer than the base's own span of notification dates plus this is a typo in a date
 
 RULE_MNR_P23 = "MS, Sinan Normas e Rotinas 2007, p. 23"
 RULE_MNR_P24 = "MS, Sinan Normas e Rotinas 2007, p. 24"
@@ -149,6 +154,10 @@ def find_pairs(df: pd.DataFrame, log: list[str] | None = None, stats: dict | Non
         unreachable = sum(1 for i in range(n) if not nome[i] or (nasc[i] is None and not mae[i]))
         stats["sem_chave"] = {"sem_nome": no_name, "nome_de_uma_palavra": one_token, "sem_nascimento": no_birth, "sem_sexo": no_sex,
                               "sem_mae": no_mother, "fora_de_toda_chave": unreachable}
+        if n and no_name * 2 >= n:
+            # MENINNET.DBF (2026-10-28): NM_PACIENT present but blank in all 5,902 records; every key needs the name
+            log.append(f"AVISO: NM_PACIENT em branco em {no_name} de {n} registros; sem o nome nenhuma chave de duplicidade "
+                       f"funciona. Confira se o DBF foi exportado sem os dados de identificação do paciente")
 
     def add(i, j, key):
         if i == j:
@@ -233,8 +242,28 @@ def _days(a: dt.date | None, b: dt.date | None) -> int | None:
     return None if a is None or b is None else abs((b - a).days)
 
 
-def classify(a: pd.Series, b: pd.Series, prof: Profile, same_unit: bool, mother: str) -> tuple[str, str]:
-    """(suggested label, rule). `mother` is 'igual', 'diferente' or '' (not comparable)."""
+def interval_band(days: int) -> str:
+    for hi, name in INTERVAL_BANDS:
+        if days <= hi:
+            return name
+    return INTERVAL_BAND_LAST
+
+
+def implausible_after(df: pd.DataFrame) -> int | None:
+    """Days beyond which an interval between two event dates cannot be real: the span of DT_NOTIFIC in the base plus
+    IMPLAUSIBLE_MARGIN_DAYS (symptoms may precede the first notification by months, not by decades)."""
+    if "DT_NOTIFIC" not in df.columns:
+        return None
+    dates = [d for d in (to_date(v) for v in df["DT_NOTIFIC"]) if d is not None]
+    if not dates:
+        return None
+    return (max(dates) - min(dates)).days + IMPLAUSIBLE_MARGIN_DAYS
+
+
+def classify(a: pd.Series, b: pd.Series, prof: Profile, same_unit: bool, mother: str,
+             max_days: int | None = None) -> tuple[str, str]:
+    """(suggested label, rule). `mother` is 'igual', 'diferente' or '' (not comparable). `max_days` (acute profile): an
+    interval above it is flagged as a date error instead of being banded (see implausible_after)."""
     if mother == "diferente":
         return "homônimo? (nome da mãe diferente)", RULE_MNR_P26
     ev_a, ev_b = to_date(a.get(prof.event)) if prof.event else None, to_date(b.get(prof.event)) if prof.event else None
@@ -268,7 +297,10 @@ def classify(a: pd.Series, b: pd.Series, prof: Profile, same_unit: bool, mother:
         return "possível duplicidade (qualquer período)", prof.rule
     if days is None:
         return "mesma pessoa; sem data do evento para comparar", prof.rule
-    return f"mesma pessoa, {days} dias entre eventos ({prof.event}): duplicidade se for o mesmo evento", prof.rule
+    if max_days is not None and days > max_days:
+        return (f"data implausível? ({days} dias entre eventos, {prof.event}; maior que o período coberto pela base: "
+                f"conferir as datas)"), prof.rule
+    return f"mesma pessoa, {interval_band(days)} ({days} dias entre eventos, {prof.event}): duplicidade se for o mesmo evento", prof.rule
 
 
 def _completeness(row: pd.Series, columns: list[str]) -> int:
@@ -347,7 +379,9 @@ def build_tables(df: pd.DataFrame, raw_columns: list[str], def_stem: str | None,
         if c and c in df.columns and c not in side_fields:
             side_fields.append(c)
     rows, short = [], []
-    stats.update({"pairs": len(pairs), "by_key": {k: 0 for k in KEYS}, "by_label": {}, "judged": 0, "profile": prof.kind})
+    max_days = implausible_after(df) if prof.kind == "agudo" else None
+    stats.update({"pairs": len(pairs), "by_key": {k: 0 for k in KEYS}, "by_label": {}, "judged": 0, "profile": prof.kind,
+                  "max_days": max_days})
     ordered = sorted(pairs.items(), key=lambda kv: (to_date(df.iloc[kv[0][0]].get("DT_NOTIFIC")) or dt.date.max, kv[0]))
     for n, ((i, j), keys) in enumerate(ordered, 1):
         a, b = df.iloc[i], df.iloc[j]
@@ -357,7 +391,7 @@ def build_tables(df: pd.DataFrame, raw_columns: list[str], def_stem: str | None,
         same_unit = code(a.get("ID_UNIDADE")) != "" and code(a.get("ID_UNIDADE")) == code(b.get("ID_UNIDADE"))
         same_mun = code(a.get("ID_MUNICIP")) != "" and code(a.get("ID_MUNICIP")) == code(b.get("ID_MUNICIP"))
         mother = _mother_status(a, b)
-        label, rule = classify(a, b, prof, same_unit, mother)
+        label, rule = classify(a, b, prof, same_unit, mother, max_days)
         judged = any(code(r.get(f)) in {"1", "2"} for r in (a, b) for f in ("NDUPLIC_N",)) or \
             any(code(r.get("IN_VINCULA")) == "1" for r in (a, b))
         keep, why = _keep(a, b)

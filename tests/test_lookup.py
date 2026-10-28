@@ -130,3 +130,17 @@ def test_csv_gz_is_read(tmp_path):
     p.write_bytes(gzip.compress("ID_UNIDADE,NM_UNIDADE\n0000001,UNIDADE UM\n".encode("utf-8")))
     t = load_lookup(p, "ID_UNIDADE", "NM_UNIDADE")
     assert t.lookup("0000001") == "UNIDADE UM" and t.lookup("1") == "UNIDADE UM"
+
+
+def test_code_column_falls_back_to_first_id_column(tmp_path):
+    """MeningeNET.def reads ATE_HOSP_1 (and GestSifNET PRE_UNIPRE) from UNIDINVEST.dbf, whose code column is ID_UNIDADE:
+    the first ID_/CO_/CD_ column serves as code column, with a note, instead of refusing the table (2026-10-28)."""
+    write_dbf(tmp_path / "unidinvest.dbf", [("ID_UNIDADE", "C", 7, 0), ("NM_UNIDADE", "C", 60, 0)],
+              [{"ID_UNIDADE": k, "NM_UNIDADE": v} for k, v in UNITS.items()], encoding="cp850")
+    t = load_lookup(tmp_path / "unidinvest.dbf", "ATE_HOSP_1", "NM_UNIDADE")
+    assert t.lookup("2561492") == "HOSPITAL GERAL DE FORTALEZA"
+    assert any(n.startswith("coluna ATE_HOSP_1 ausente; códigos lidos de ID_UNIDADE") for n in t.notes), t.notes
+    write_dbf(tmp_path / "tres.dbf", [("ID_UNIDADE", "C", 7, 0), ("NM_UNIDADE", "C", 60, 0), ("ID_ESTAB", "C", 7, 0)],
+              [{"ID_UNIDADE": k, "NM_UNIDADE": v, "ID_ESTAB": k} for k, v in UNITS.items()], encoding="cp850")
+    with pytest.raises(ValueError):
+        load_lookup(tmp_path / "tres.dbf", "ATE_HOSP_1", "NM_OUTRA")     # no name column: still refused
