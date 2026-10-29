@@ -7,7 +7,7 @@
 ; Atualizado em 17/05/2016 - Separando Dengue de Chikungunya (Andrea)
 
 ; ========== Leitura do arquivo 							==========
-Ac:\Sinan_Online\BaseDBF\Dengon*.DB?
+Ac:\Sinan_Online\BaseDBF\Dengon*.DBF
 ;Ac:\SinanNet\BaseDBF\Deng*.DBF
 
 

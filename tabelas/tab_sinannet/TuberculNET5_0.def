@@ -6,7 +6,7 @@
 ; Atualizado em 15/01/2015 pela CGPNCT - inclusão das variáveis novas para a versão 5.0 do Sinan TB
 ; Atualizado em 25/06/2018 pela CGPNCT - inclusao nivel de atencao (atencao basica) para unidade notificacao (ID_UNIDADE) e de atendimento (ID_UNID_AT)
 
-Ac:\SinanNet\BaseDBF\TUBE*.DB?
+Ac:\SinanNet\BaseDBF\TUBEN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

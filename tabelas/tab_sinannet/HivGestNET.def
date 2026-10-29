@@ -2,7 +2,7 @@
 ; Elaborado em 16/10/2007 pelo GT- Sinan/MS
 ; Atualizado em 02/09/2010 pelo GT- Sinan/MS unidade de saúde de pré natal e parto.
 ; Atualizado em 24/09/2010 pelo GT- Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
-Ac:\SinanNet\BaseDBF\HivG*.db?
+Ac:\SinanNet\BaseDBF\HivGeN*.dbf
 
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação

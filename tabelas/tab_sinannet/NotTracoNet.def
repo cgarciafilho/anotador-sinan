@@ -2,7 +2,7 @@
 ; DEF NOTRACONET Atualizado em 10/11/2009 pelo GT- Sinan/MS - Versão 4.0 SinanNet
 ; Atualizado em 24/09/2010 pelo GT - Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
 
-Ac:\SinanNet\BaseDBF\NTRA*.DB?
+Ac:\SinanNet\BaseDBF\NTRACO*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

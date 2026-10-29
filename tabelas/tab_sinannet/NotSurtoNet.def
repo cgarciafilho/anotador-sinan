@@ -4,7 +4,7 @@
 ; Incluído agravos agravsurt.cnv que contém os agravos existentes no NSURTNET.DBF
 ; Inclusão de Agravos Surto CIEVS em 28/06/2012. Demanda CIEVS Raquel, Inclusão UT-Sinan Andrea
 
-Ac:\SinanNet\BaseDBF\NSurt*.DB?
+Ac:\SinanNet\BaseDBF\NSurtN*.DBF
 
 ;    Definições para Ano, Mês, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

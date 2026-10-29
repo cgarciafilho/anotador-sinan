@@ -2,7 +2,7 @@
 ; revisado em 18/08/2008 GT Sinan SVS/MS  ADEQUAÇÃO A VESÃO 4.0
 ; Atualizado em 24/09/2010 pelo GT - Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
 
-Ac:\SinanNet\BaseDBF\Hans*.DB?
+Ac:\SinanNet\BaseDBF\HansN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

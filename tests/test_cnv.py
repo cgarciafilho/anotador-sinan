@@ -112,7 +112,7 @@ def test_all_cnv_parse(tab_dir):
 
 def test_def_tuberculose(tab_dir):
     d = parse_def(tab_dir / "TuberculNET5_0.def")
-    assert d.dbf_pattern.upper().endswith("TUBE*.DB?")
+    assert d.dbf_pattern.upper().endswith("TUBEN*.DBF")      # linha A do TabWin da SESA-CE (2026-10-29): nome real do export
     by_field = {}
     for ln in d.lines:
         by_field.setdefault(ln.field, []).append(ln)

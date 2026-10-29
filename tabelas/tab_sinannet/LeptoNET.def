@@ -2,7 +2,7 @@
 ; Atualizado em 05/06/2009 pelo GT- Sinan/MS - Versão 2.0.0.0
 ; Atualizado em 02/09/2010 pelo GT- Sinan/MS - inclusão dados viajantes
 ; Atualizado em 24/09/2010 pelo GT- Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
-Ac:\SinanNet\BaseDBF\LEPT*.DB?
+Ac:\SinanNet\BaseDBF\LEPTON*.DBF
 
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação

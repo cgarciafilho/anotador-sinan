@@ -7,7 +7,7 @@
 ; Atualizado em 06/11/2012 pelo GT - Sinan/MS - correção faixa etária RIPSA.
 
 
-Ac:\SinanNet\BaseDBF\Sifc*.DB?
+Ac:\SinanNet\BaseDBF\SifiCN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

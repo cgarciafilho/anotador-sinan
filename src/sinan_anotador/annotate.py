@@ -323,6 +323,21 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
             else:
                 skipped.append(f"{fld}: só agrupamentos no .def; sem rótulo")
             continue
+        if dbf_lines:
+            # external lookup (CNES units, CBO occupations) first; the .def's category tables for the same field are lists or
+            # groupings of the same codes (Unid_Prisionais.CNV: 22 prison units of Ceará; GRUPO1a.CNV: CBO major groups) and
+            # only answer for codes the external table lacks. Before 2026-10-29 the category table won and NotIndiviNet lost
+            # the CNES names of every non-prison unit.
+            table, more = lookup_chain(dbf_lines[0])
+            if table is not None:
+                extra = []
+                for _, cv in usable:
+                    if cv not in extra:
+                        extra.append(cv)
+                plans[col] = FieldPlan(col, table, 1, more + extra, def_label=dbf_lines[0].label)
+                notes.append(f"{fld}: tabela externa {dbf_lines[0].lookup_dbf} primeiro; "
+                             f"{', '.join(cv.name for cv in extra)} só para códigos que ela não tem")
+                continue
         distinct = {c.name.upper() for _, c in usable}
         ln, c = usable[0]
         if distinct <= {"UFCODIGO.CNV", "UFCCODIG.CNV"} and len(distinct) > 1:

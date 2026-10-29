@@ -3,7 +3,7 @@
 ; Atualizado em 24/09/2010 pelo GT - Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
 ; Atualizado em 06/07/2011 pelo GT - Sinan/MS - inclusão de semana de início de sintomas 
 
-Ac:\SinanNet\BaseDBF\Leis*.DB?
+Ac:\SinanNet\BaseDBF\LeishN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

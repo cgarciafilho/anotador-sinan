@@ -5,7 +5,7 @@
 ; Atualizado em 24/09/2010 pelo GT- Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
 ; Atualizado em 04/09/2012 pelo GT- Sinan/MS - inclusão de Parceiro Tratado;Par Esquema de tratamento; e  Motivo para Não Tratamento Parceiro
 
-Ac:\SinanNet\BaseDBF\SIFG*.DB?
+Ac:\SinanNet\BaseDBF\SIFGEN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

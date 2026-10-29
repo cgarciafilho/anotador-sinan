@@ -1,7 +1,7 @@
 ;ACOMPANHAMENTO DE SURTO - PLANILHA DE SURTO
 ; Inclusão de Agravos Surto CIEVS em 28/06/2012. Demanda CIEVS Raquel, Inclusão UT-Sinan Andrea
 
-Ac:\SinanNet\BaseDBF\PSurt*.DB?
+Ac:\SinanNet\BaseDBF\PSurtN*.DBF
 
 ;    Definições para Ano, Mês, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

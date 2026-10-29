@@ -563,3 +563,42 @@ DBF: edição local errada). Proposta: adotar só as linhas `A` da SESA nos 60 `
 `Unid_Prisionais.CNV`; decidir os cinco conteúdos com as bases reais, campo a campo. Nada disso foi aplicado.
 Verificação: `scripts/tabelas_ausentes.py` e `scripts/cobertura_campos.py` depois da cópia (números acima); suíte completa,
 186 testes passando e 4 pulados (174 s). Não rodado em base real: o teste com as bases de todos os agravos está marcado para 29/10.
+
+### 2026-10-29 — Linhas `A` dos `.def` da SESA e `Unid_Prisionais.CNV` adotadas (decisão do usuário)
+Contexto: ver a entrada anterior. O usuário decidiu adotar, nos `.def` do repositório, só a linha `A` (padrão do nome do DBF) da
+versão da SESA-CE, mantendo o corpo do DATASUS, e incluir a tabela local `Unid_Prisionais.CNV`. Os cinco `.def` com outras
+diferenças de conteúdo continuam pendentes, salvo a linha que cita a tabela prisional em `NotIndiviNet.def`, que entra com ela.
+Critério de aceite, escrito antes de aplicar:
+- C1. Os 60 `.def` continuam a ser lidos e, comparados com a versão anterior, diferem só na linha `A` (`NotIndiviNet.def` também
+  na linha `XUnid_Prisionais`). `-LeptoNET.def` não existe na SESA e fica como está.
+- C2. Nome de export inferido do padrão de cada `.def` (prefixo + `ET.DBF`) casa um só `.def` em pelo menos 53 dos 59, e
+  `SIFICNET.DBF`, `NINDINET.DBF`, `EPIZONET.DBF` e `TETANNET.DBF` casam, respectivamente, `SifilisNET`, `NotIndiviNet`, `EpizotNet`
+  e `TetneoNET` (hoje: nenhum, nenhum, nenhum e `TetacidNET`).
+- C3. `detect_def` com os oito nomes reais já vistos (`TUBENET`, `SIFGENET`, `SIFICNET`, `HANSNET`, `LEISHNET`, `MENINNET`, `LTANET`,
+  `DENGNET`) escolhe o mesmo `.def` que antes, com `KNOWN_DBF_PREFIXES` esvaziado no teste (a lista manual continua no código como
+  reserva, mas não pode ser o que faz o reconhecimento funcionar).
+- C4. Suíte completa passando.
+Consequência pré-registrada: se C1–C4 não forem todos atendidos, as linhas voltam à versão do DATASUS (`git checkout`), a tabela
+prisional fica e o achado permanece registrado aqui como pendente.
+Resultado (2026-10-29, antes da decisão final):
+- C1 atendido: 58 linhas `A` trocadas (as de `PfapolioNET.def` e `-LeptoNET.def` já eram iguais ou não existem na SESA); o diff
+  contra a versão anterior tem só linhas `A` mais a linha `XUnid_Prisionais` e uma linha em branco em `NotIndiviNet.def`.
+- C2 **não atendido por um**: 52 de 59 nomes casam um só `.def` (antes, 50). Os quatro nomes citados casam o `.def` certo. Os sete
+  ambíguos são pares legítimos do pacote (`TuberculNET`/`TuberculNET5_0`, `ChagasNET`/`ChagasNET2`, `CoqueNET`/`CoqueNETeste`) e
+  `LeptoNET`/`-LeptoNET`. O limiar 53 foi escrito a partir da simulação com o conjunto da SESA, que não tem `-LeptoNET.def`; o
+  critério mandava manter esse arquivo, logo o próprio critério contava com 53 num conjunto e media em outro. Erro meu de denominador,
+  anotado como tal; a consequência pré-registrada (reverter) fica para o usuário aplicar ou dispensar, e a dispensa é pós-hoc.
+- C3 atendido: os oito nomes reais escolhem o mesmo `.def` com a lista manual vazia, agora "pelo padrão de arquivo do .def".
+- C4 atendido: 188 testes passando, 4 pulados (181 s).
+Achado ao incluir a tabela prisional: no `build_plan`, quando um campo tinha busca em `.dbf` externo e tabela de categorias, a
+tabela de categorias vencia. Com a linha `XUnid_Prisionais` em `NotIndiviNet.def`, `ID_UNIDADE` passou a ter só as 22 prisões e o
+HU Walter Cantídio saiu "sem rótulo". O mesmo mecanismo já fazia `ID_OCUPA_N` da notificação individual sair pelo `GRUPO1a.CNV`
+("Categoria de ocupação classificada na CBO") em vez do nome da CBO em `OCUPANET`. Decisão: busca externa primeiro, tabelas de
+categorias do mesmo campo como reserva para códigos que ela não tem, com nota no log. Afeta só `ID_UNIDADE` e `ID_OCUPA_N` de
+`NotIndiviNet.def` (levantamento nos 60 `.def`: os únicos campos com as duas coisas, além de `ID_AGRAVO`, cujo `AGRAVNET.DBF`
+não tem nomes e por isso continua pelas listas `.cnv`). Os 23 códigos da tabela prisional já estão no `unidanet.csv` do CNES:
+a tabela só responderia para unidade que o CNES não tivesse. Testes: `test_real_export_names_recognised_by_def_pattern` (C3 e os
+três nomes novos) e `test_prison_units_table_does_not_displace_cnes_lookup` (unidade e ocupação).
+Decisão final (usuário, 2026-10-29): manter as linhas `A` da SESA apesar do C2, com esta nota pós-hoc: o limiar 53 estava errado
+pelo denominador (conjunto sem `-LeptoNET.def`); medido no conjunto certo, o mesmo critério daria 52, e a diferença é toda a variante
+`-LeptoNET.def`, que também existe no DATASUS. A lista `KNOWN_DBF_PREFIXES` continua no código como reserva.

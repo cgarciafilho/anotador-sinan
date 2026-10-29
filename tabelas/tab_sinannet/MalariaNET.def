@@ -3,7 +3,7 @@
 ; Atualizado em 02/09/2010 pelo GT- Sinan/MS  incluída ocupação
 ; Atualizado em 24/09/2010 pelo GT- Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
 ;Atualizado em 31/01/2012 pelo GT-Sinan/MS-incluída classificação final
-Ac:\SinanNet\BaseDBF\Mala*.DB?
+Ac:\SinanNet\BaseDBF\MalaN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV

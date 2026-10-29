@@ -16,7 +16,7 @@
 ; Atualizado em 21/01/2019 pela UT_Sinan/SVS/MS _ alteração do texto "todos agravos listados na portaria de notificação compulsória nº 1.271 de 06/06/2014" para "todos agravos listados na portaria de notificação compulsória vigente
 ; (Portaria de Consolidação nº 4 de 28 de Setembro de 2017, anexo V - Capítulo I)"
 
-Ac:\SinanNet\BaseDBF\*.DB?
+Ac:\SinanNet\BaseDBF\NindiN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,                   DT_NOTIFIC,  1, ANOS.CNV
@@ -28,6 +28,8 @@ XTrim.da Notific,                  DT_NOTIFIC,  5, TRIME.CNV
 ;    Definições para Ano e Semana epidemiologica de notificação
 XSem.Epid Notific,                 SEM_NOT,     5, SEMANAEP.CNV
 XAno Epid notific,                 NU_ANO,      1, ANOS.CNV
+
+XUnid_Prisionais,      ID_UNIDADE,    1,  Unid_Prisionais.CNV
 
 
 ; Definições para Ano, Trimestre, Mes do Inicio dos Sintomas ou acidente

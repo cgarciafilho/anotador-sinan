@@ -14,8 +14,17 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
   (138 dos 627 `.cnv`); nada se perdeu na publicação. `PfapolioNET.def` na versão de 2024 (cita `DIAGNOSCOPIA.CNV`).
 - `scripts/cobertura_campos.py`: por `.def`, quantos campos de categoria têm tabela, com o total e os campos sem tabela.
 - `.def` com extensão em maiúsculas (`AnimaispNET.DEF`, `PlanSurtoNet.DEF`) passam a ser lidos.
+- Linha `A` (padrão do nome do DBF) dos 58 `.def` trocada pela do TabWin da SESA-CE, que traz os nomes reais do export do
+  Sinan NET (`TUBEN*.DBF`, `SifiCN*.DBF`, `NindiN*.DBF`): a base é reconhecida pelo próprio `.def`, e a lista manual de nomes
+  vira reserva. Passam a ser reconhecidos pelo padrão `SIFICNET`, `NINDINET`, `EPIZONET` e `TETANNET` (este casava o `.def` de
+  tétano acidental). O corpo dos `.def` continua o do DATASUS.
+- `Unid_Prisionais.CNV` (22 unidades prisionais do Ceará, código CNES) do TabWin da SESA, citada por `NotIndiviNet.def`.
 
 ### Corrigido
+- Campo com busca em tabela externa (CNES, CBO) e tabela de categorias no mesmo `.def`: a tabela de categorias vencia. Na
+  notificação individual, a ocupação saía como "Categoria de ocupação classificada na CBO" (`GRUPO1a.CNV`) em vez do nome da CBO,
+  e, com a tabela prisional, a unidade perderia o nome do CNES. Agora a busca externa vem primeiro e a tabela de categorias só
+  responde para códigos que ela não tem; o log anota.
 - `.cnv` cujo cabeçalho traz um token a mais (`10  6   33X001`, tabelas de região de saúde) era rejeitado como "sem cabeçalho".
 - Nomes reais de export do Sinan NET reconhecidos pelo nome: `SIFICNET` (sífilis congênita), `LEISHNET` (leishmaniose
   visceral) e `MENINNET` (meningite), além dos já conhecidos.

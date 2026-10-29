@@ -119,6 +119,38 @@ def test_dbf_field_aliases_plan_and_outside_list(tab_dir):
     assert def_field("BACILOSCO") == "BACILOSCOP" and def_field("DT_DESC3") == "DT_DES3" and def_field("cs_sexo") == "CS_SEXO"
 
 
+def test_real_export_names_recognised_by_def_pattern(tab_dir, monkeypatch):
+    """The `A` lines of the .def files carry the Sinan NET export names as the SESA-CE TabWin writes them (TUBEN*.DBF,
+    SifiCN*.DBF…), so the eight export names seen in real bases resolve by pattern alone; KNOWN_DBF_PREFIXES is only a reserve."""
+    import sinan_anotador.annotate as A
+    monkeypatch.setattr(A, "KNOWN_DBF_PREFIXES", {})
+    expect = {"TUBENET.DBF": "TuberculNET5_0", "SIFGENET.DBF": "GestSifNET", "SIFICNET.DBF": "SifilisNET", "HANSNET.DBF": "HansNET",
+              "LEISHNET.DBF": "LeishvisNET", "MENINNET.DBF": "MeningeNET", "LTANET.DBF": "LeishtegNET", "DENGNET.DBF": "DengueNET",
+              "NINDINET.DBF": "NotIndiviNet", "EPIZONET.DBF": "EpizotNet", "TETANNET.DBF": "TetneoNET"}
+    for dbf, name in expect.items():
+        d = parse_def(tab_dir / f"{name}.def")
+        chosen, notes = detect_def(dbf, sorted(d.fields), tab_dir)
+        assert chosen is not None and chosen.name == name, (dbf, chosen and chosen.name, notes)
+        assert "reconhecido pelo padrão de arquivo do .def" in notes[0], notes
+
+
+def test_prison_units_table_does_not_displace_cnes_lookup(tab_dir):
+    """NotIndiviNet.def (SESA version) cites Unid_Prisionais.CNV for ID_UNIDADE; the field keeps the CNES lookup chain."""
+    d = parse_def(tab_dir / "NotIndiviNet.def")
+    assert any(ln.cnv and ln.cnv.lower() == "unid_prisionais.cnv" for ln in d.lines)
+    cols = ["ID_UNIDADE", "ID_OCUPA_N"]
+    plan = build_plan(d, cols, {c: "C" for c in cols}, tab_dir)
+    fp = plan.fields["ID_UNIDADE"]
+    assert "unidanet" in fp.cnv.name.lower(), fp.cnv.name
+    assert [f.name for f in fp.fallbacks][-1] == "Unid_Prisionais.CNV"
+    assert "ITAITINGA" in label_for("6375286", fp).upper()           # prison unit: named by the CNES table itself
+    assert "WALTER CANT" in label_for("2561492", fp).upper()         # a hospital: would be "sem rótulo" with the prison table alone
+    assert any(n.startswith("ID_UNIDADE: tabela externa unidanet.dbf primeiro") for n in plan.notes), plan.notes
+    # same rule gives NotIndiviNet occupations their CBO names instead of the GRUPO1a.CNV major groups
+    fo = plan.fields["ID_OCUPA_N"]
+    assert "ocupanet" in fo.cnv.name.lower() and label_for("223505", fo).upper() == "ENFERMEIRO"      # CBO 2235-05
+
+
 def test_missing_cnv_rebuilt_from_dictionary_csv(tab_dir, tmp_path):
     """When a .cnv cited by the .def is absent and the agravo's dictionary CSV carries its categories (categorias_cnv), the
     table is rebuilt in memory and the log says where it came from. ESQUETER.CNV / ESQUETERatu.CNV (HansNET.def) were the

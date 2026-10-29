@@ -7,7 +7,7 @@
 
 ; ========== Leitura do arquivo 							==========
 ;Ac:\Sinan_Online\BaseDBF\Dengon*.DBF
-Ac:\SinanNet\BaseDBF\Deng*.DB?
+Ac:\SinanNet\BaseDBF\Dengn*.DBF
 
 
 ;==========  INICIO - Definições para Ano, Mes, Semana e Trimestre da Notificação 	==========

@@ -5,7 +5,7 @@
 ; Atualizado em 27/01/2011 pelo GT- Sinan/MS - inclusão cnv municípios com NHE no Brasil conforme portaria Nº 2.254, 05/08/2010.
 ; Patch 4.2
 
-Ac:\SinanNet\BaseDBF\COQU*.DB?
+Ac:\SinanNet\BaseDBF\COQUEN*.DBF
 
 ;    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV
