@@ -53,11 +53,10 @@ $PIP install -q --no-index --find-links "$HERE/wheels" --target "$STAGE/python/L
 cp -r "$ROOT/src/sinan_anotador" "$STAGE/app/"
 find "$STAGE/app" -name __pycache__ -type d -exec rm -rf {} +
 mkdir -p "$STAGE/app/tab_sinannet"
-cp "$ROOT"/tabelas/tab_sinannet/*.def "$ROOT"/tabelas/tab_sinannet/*.cnv "$STAGE/app/tab_sinannet/"
-# external lookup tables (unidanet.dbf etc., or CSV equivalents), when present
-for f in "$ROOT"/tabelas/tab_sinannet/*.dbf "$ROOT"/tabelas/tab_sinannet/*.DBF "$ROOT"/tabelas/tab_sinannet/*.csv; do
-    [ -f "$f" ] && cp "$f" "$STAGE/app/tab_sinannet/"
-done
+# .def/.cnv in any case (the TAB_SINANNET pack has AnimaispNET.DEF, PlanSurtoNet.DEF and *.CNV; a lowercase glob left 35 files
+# out of the zip of 2026-10-29) and the external lookup tables (unidanet.dbf etc., or CSV equivalents), when present
+find "$ROOT/tabelas/tab_sinannet" -maxdepth 1 -type f \( -iname '*.def' -o -iname '*.cnv' -o -iname '*.dbf' -o -iname '*.csv' \) \
+    -exec cp -t "$STAGE/app/tab_sinannet/" {} +
 # SESA-CE regionalisation (municipality -> ADS/SR), read by the duplicates sheets from the folder above tab_sinannet
 cp "$ROOT/tabelas/regionalizacao_sesa_sr_ads.csv" "$STAGE/app/"
 if [ -d "$ROOT/tabelas/dicionarios" ]; then

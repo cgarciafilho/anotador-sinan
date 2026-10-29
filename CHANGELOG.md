@@ -26,6 +26,8 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
   e, com a tabela prisional, a unidade perderia o nome do CNES. Agora a busca externa vem primeiro e a tabela de categorias só
   responde para códigos que ela não tem; o log anota.
 - `.cnv` cujo cabeçalho traz um token a mais (`10  6   33X001`, tabelas de região de saúde) era rejeitado como "sem cabeçalho".
+- `build/build_windows_zip.sh` copiava só `*.def` e `*.cnv` em minúsculas: `Unid_Prisionais.CNV`, `AnimaispNET.DEF`,
+  `PlanSurtoNet.DEF` e 32 `*.CNV` ficavam fora do zip (668 de 703 arquivos). Agora copia sem distinguir maiúsculas.
 - Nomes reais de export do Sinan NET reconhecidos pelo nome: `SIFICNET` (sífilis congênita), `LEISHNET` (leishmaniose
   visceral) e `MENINNET` (meningite), além dos já conhecidos.
 - Tabela `.cnv` que o `.def` cita e o pacote do TabWin não tem: quando o dicionário de dados do agravo em `tabelas/dicionarios/`

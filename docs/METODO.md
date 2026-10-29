@@ -27,6 +27,8 @@ foram retirados caminhos locais, nomes de máquinas e detalhes operacionais que 
 - O embeddable não traz tkinter: interface por arrastar o arquivo sobre o `.bat` (v1) ou página local no navegador.
 - Desenvolvimento: `.venv` com Python 3.13 e as mesmas versões do pacote Windows, mais pytest. Testes: `python -m pytest tests/ -q`
   (153 testes em 2026-10-26, ~3 min). O zip do produto tem ~103 MB; o embeddable e as wheels baixadas ficam em `build/`, fora do git.
+- Manual em PDF (`build/build_manual_pdf.py`): precisa de `weasyprint` e `markdown` no venv; instalados no legba em 2026-10-29
+  (weasyprint 70.0). O zip local de 2026-10-29 (fb7a1c7 + correção do script) tem 67,6 MB: as tabelas comprimem bem.
 
 ## Decisões
 
@@ -60,6 +62,10 @@ o piloto da semana 3 mede tempo e erros contra ela, com critério escrito antes.
   (idade gestacional ignorada, `gestante.cnv`) era lido como "4º trimestre". Passa a mostrar o rótulo ("gestação: 1º trimestre /
   idade gestacional ignorada"); as colunas `CS_GESTANT_rotulo_A/B` já estavam certas. Achado pelo usuário na base real. Teste novo
   com o código 4 e conferência na planilha sintética (`tests/test_duplicates.py`).
+- 2026-10-29 — `build/build_windows_zip.sh` copiava as tabelas com `*.def` e `*.cnv` (só minúsculas): o zip montado hoje saiu
+  com 668 dos 703 arquivos de `tabelas/tab_sinannet/`, sem `Unid_Prisionais.CNV`, `AnimaispNET.DEF`, `PlanSurtoNet.DEF` e 32
+  `*.CNV` do pacote completo. Achado ao conferir o conteúdo do zip antes de entregar. Trocado por `find -iname`; zip remontado
+  com 703 (597+33 cnv, 58+2 def, 13 dbf/csv), sha256 `fbb2d70c…`, 67,6 MB. O release do GitHub Actions (tag) usa o mesmo script.
 
 ### 2026-10-22 — Critério de aceite da sessão 01
 Registrado antes de escrever código, copiado do brief da sessão 01. Ajustes depois dos resultados serão marcados pós-hoc.
