@@ -10,6 +10,8 @@ Sources, in order of preference:
 3. The label of the .def line used for the field (TabWin's own, abbreviated: "Situação Encerra."), cleaned of the
    tabulation wording ("Ano da Notific" -> "Data Notific"; "Mun Resid CE" -> "Mun Resid").
 4. The same label taken from any other .def (NotIndiviNet first), for fields the chosen .def does not describe.
+5. For the employer block of the occupational-health forms (NOEMPRESA, END_EMP, FONE_EMP...), which no .def names, a
+   built-in table with the names as printed on those forms.
 Fields found nowhere (free text, addresses not in the table) keep the raw name. The TabWin label is always kept in the
 `campos` sheet for traceability.
 """
@@ -50,6 +52,19 @@ NOTIFICATION_FORM = {
     "SOUNDEX": "Soundex do nome (campo de sistema)",
 }
 
+# Employer block of the Sinan NET occupational-health forms (acidente de trabalho grave, acidente com material biológico,
+# intoxicação exógena, LER/DORT, PAIR, dermatose, transtorno mental, câncer relacionado ao trabalho): the same fields in the
+# eight .def files, none of which names them (2026-10-29, 35 real bases). Names follow the printed forms; a CSV dictionary wins.
+WORK_FORM = {
+    "NUCNPJ_CPF": "CNPJ ou CPF do empregador", "NOEMPRESA": "Nome da empresa ou empregador (razão social)",
+    "END_EMP": "Endereço do empregador (logradouro)", "NU_EMP": "Número (endereço do empregador)",
+    "COMP_EMP": "Complemento (endereço do empregador)", "COBAIEMP": "Bairro do empregador (código)",
+    "NOBAIEMP": "Bairro do empregador", "REF_EMP": "Ponto de referência (empregador)", "DIS_EMP": "Distrito do empregador",
+    "CEP_EMP": "CEP do empregador", "UF_EMP": "UF do empregador", "SG_UF_EMP": "UF do empregador",
+    "MUN_EMP": "Município do empregador", "DDD_EMP": "DDD do telefone do empregador", "FONE_EMP": "Telefone do empregador",
+    "CNPJ_PRIN": "CNPJ da empresa principal (terceirização)", "NOME_PRIN": "Nome da empresa principal (terceirização)",
+}
+
 SOURCE_CSV = "dicionário CSV"
 
 # .def name -> stem of the CSV dictionary of the same disease in dicionarios/ (checked first; the others fill the rest)
@@ -60,6 +75,7 @@ DEF_TO_CSV = {"TuberculNET": "dicionario_tuberculose", "TuberculNET5_0": "dicion
 SOURCE_DEF = ".def do agravo (TabWin)"
 SOURCE_OTHER_DEF = "outro .def (TabWin)"
 SOURCE_FORM = "ficha de notificação (tabela interna)"
+SOURCE_WORK_FORM = "ficha de saúde do trabalhador (tabela interna)"
 
 RE_YEAR = re.compile(r"^Ano\s+(da|do|de|d[ao]s)?\s*", re.IGNORECASE)
 RE_TRAILING_UF = re.compile(r"\s+(AC|AL|AM|AP|BA|BR|CE|DF|ES|GO|MA|MG|MS|MT|PA|PB|PE|PI|PR|RJ|RN|RO|RR|RS|SC|SE|SP|TO)$")
@@ -220,7 +236,7 @@ def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, pr
     others: dict[str, str] = {}
     out: dict[str, FieldName] = {}
     pending = [c for c in columns if c.upper() not in csv_names and def_field(c) not in own
-               and c.upper() not in NOTIFICATION_FORM]
+               and c.upper() not in NOTIFICATION_FORM and c.upper() not in WORK_FORM]
     if pending:
         defs = sorted(def_files(tab_dir), key=lambda p: (p.stem != "NotIndiviNet", p.stem.lower()))
         for p in defs:
@@ -254,6 +270,8 @@ def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, pr
             out[c] = FieldName(c, own[kd], SOURCE_DEF, raw_def.get(kd))
         elif kd in others:
             out[c] = FieldName(c, others[kd], SOURCE_OTHER_DEF, raw_def.get(kd))
+        elif k in WORK_FORM:
+            out[c] = FieldName(c, WORK_FORM[k], SOURCE_WORK_FORM, raw_def.get(kd))
         else:
             out[c] = FieldName(c, None, None, raw_def.get(kd))
     return out

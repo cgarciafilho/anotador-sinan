@@ -205,6 +205,7 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
             lookups_missing.add(key)
             return []
         tables: list[LookupTable] = []
+        failed: list[str] = []
         for p in paths:
             try:
                 # the name field in the .def is the column of the lookup file; the code column is named like the DBF field
@@ -213,14 +214,19 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
                 if str(e) == "tabela vazia":    # shipped empty: not a broken file, just no table (noted per field below)
                     lookups_empty.add(key)
                     continue
-                warnings.append(f"tabela externa {p.name} não pôde ser lida: {e}")
+                failed.append(f"tabela externa {p.name} não pôde ser lida: {e}")
                 continue
             except Exception as e:      # a broken table must not abort the run
-                warnings.append(f"tabela externa {p.name} não pôde ser lida: {e}")
+                failed.append(f"tabela externa {p.name} não pôde ser lida: {e}")
                 continue
             lookups[p.name.lower()] = t
             tables.append(t)
-        if not tables:
+        if tables:
+            # another file answers for the table (agravnet.csv built from the CID-10 beside TabWin's AGRAVNET.DBF, which has
+            # no name column): the failure is worth a note, not a warning
+            notes.extend(f"{f}; substituída por {tables[0].name}" for f in failed)
+        else:
+            warnings.extend(failed)
             lookups_missing.add(key)
         lookup_sets[key] = tables
         return tables

@@ -7,6 +7,12 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
 ## [Não lançado]
 
 ### Adicionado
+- `tabelas/tab_sinannet/agravnet.csv`: CID-10 completa (14.465 códigos, categorias de 3 e subcategorias de 4 caracteres) tirada dos
+  22 `.cnv` por capítulo do TabWin do SIM (`OBITOS_CID10_TAB.zip`, DATASUS), por `scripts/make_agravnet_csv.py`. Dá nome aos campos
+  CID das fichas de saúde do trabalhador (`CID_ACID`, `DIAG_ESP`, `DIAG_CONF`, `CID_LESAO`), que saíam sem rótulo porque o
+  `AGRAVNET.DBF` do TabWin não tem coluna de nome. Subcategoria ausente cai na categoria (`A002` → "Cólera").
+- Nome por extenso para o bloco do empregador das fichas de saúde do trabalhador (`NOEMPRESA`, `NUCNPJ_CPF`, `END_EMP`, `FONE_EMP`…,
+  17 campos), que nenhum `.def` nomeia; fonte "ficha de saúde do trabalhador (tabela interna)" na aba `campos`.
 - Pacote completo do TabWin em `tabelas/tab_sinannet/`: 486 `.cnv`, 2 `.def` (animais peçonhentos e planilha de surto) e
   `Diagnos.cnv` copiados do `TAB_SINANNET.zip` do DATASUS (arquivos de 04/2024). Cobertura de dicionário, medida por campo de
   categoria nos `.def`: de 1.801 de 2.397 campos (75%) em 58 `.def` para 2.452 de 2.453 (100%) em 60 `.def`; só
@@ -21,6 +27,11 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
 - `Unid_Prisionais.CNV` (22 unidades prisionais do Ceará, código CNES) do TabWin da SESA, citada por `NotIndiviNet.def`.
 
 ### Corrigido
+- CNAE saía 100% sem rótulo nas bases de saúde do trabalhador (35 bases reais da SESA, 2026-10-29): em `CNAENET.DBF` o código está em
+  `CLASS_CNAE`, e a escolha de coluna caía em `CO_SEQ` (sequencial). A coluna de uma tabela externa agora é achada pelo nome exato,
+  pelos 10 primeiros caracteres (limite do DBF: o `.def` da esquistossomose pede `NM_DISTRITO`, o `DISTRNET.dbf` guarda `NM_DISTRIT`)
+  ou por ser a única que contém o nome pedido; o log anota a coluna usada.
+- Tabela externa que falha mas tem substituta (`agravnet.csv` ao lado de `AGRAVNET.DBF`) vira nota no log, não AVISO.
 - Campo com busca em tabela externa (CNES, CBO) e tabela de categorias no mesmo `.def`: a tabela de categorias vencia. Na
   notificação individual, a ocupação saía como "Categoria de ocupação classificada na CBO" (`GRUPO1a.CNV`) em vez do nome da CBO,
   e, com a tabela prisional, a unidade perderia o nome do CNES. Agora a busca externa vem primeiro e a tabela de categorias só

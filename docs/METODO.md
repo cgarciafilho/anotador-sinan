@@ -608,3 +608,59 @@ três nomes novos) e `test_prison_units_table_does_not_displace_cnes_lookup` (un
 Decisão final (usuário, 2026-10-29): manter as linhas `A` da SESA apesar do C2, com esta nota pós-hoc: o limiar 53 estava errado
 pelo denominador (conjunto sem `-LeptoNET.def`); medido no conjunto certo, o mesmo critério daria 52, e a diferença é toda a variante
 `-LeptoNET.def`, que também existe no DATASUS. A lista `KNOWN_DBF_PREFIXES` continua no código como reserva.
+
+### 2026-10-29 — Teste nas 35 bases reais da SESA: quatro ajustes decididos pelo usuário (CNAE, coluna truncada, CID-10, nomes do empregador)
+Contexto: o zip v0.3.0 (79116e8) rodou numa máquina da SESA em 35 bases do Sinan NET (notificações de 01/01 a 01/03/2026); os 35
+logs terminaram em `RESULTADO: OK`. A leitura dos logs (tabela por base no projeto privado, `docs/teste_bases_reais_2026-10-29.md`)
+achou: (1) CNAE 100% sem rótulo nas 7 bases de saúde do trabalhador (2.805 registros): `CNAENET.DBF` tem as colunas `CLASS_CNAE`,
+`DS_CNAE`, `CO_SEQ`, e `_pick_columns` caía em `CO_SEQ` (um sequencial) porque só aceitava o nome exato `CNAE` ou a primeira
+coluna `ID_/CO_/CD_`; (2) `DISTRNET.dbf` falhava na esquistossomose porque o `.def` pede `NM_DISTRITO` (11 letras) e o DBF só
+guarda 10 (`NM_DISTRIT`); (3) `AGRAVNET.DBF` do TabWin não é tabela de CID (14.200 linhas, código em `ID_AGRAVO`, nenhuma coluna
+de nome), e por isso `CID_ACID`, `DIAG_ESP`, `DIAG_CONF` e `CID_LESAO` saem sem rótulo em 6 bases; (4) 415 de 3.959 campos sem
+nome por extenso, dos quais o bloco do empregador (10 campos) se repete em 8 bases. O usuário mandou fazer os quatro, com a CID-10
+"tirada do TabWin". Fonte da CID-10: os 22 `.cnv` por capítulo (`CID10_01.CNV` … `CID10_22.cnv`, largura 4, categorias de 3 e
+subcategorias de 4 caracteres) do pacote `OBITOS_CID10_TAB.zip` do TabWin do SIM (DATASUS), já em disco no projeto do atlas de
+mortalidade; 14.465 linhas declaradas nos cabeçalhos. Gravados como `tabelas/tab_sinannet/agravnet.csv` (colunas `CODIGO,NOME`),
+que a cadeia de busca já prefere ao `.dbf` de mesmo nome (`lookup.find_lookup_files`), por `scripts/make_agravnet_csv.py`.
+Fora deste bloco (não pedido): apelidos `.def`→export (8 campos), perfil de duplicidade para antirrábico e violência.
+Critério de aceite, escrito antes de mexer no código:
+- C1. `_pick_columns` escolhe `CLASS_CNAE` para (`cnae`, `ds_cnae`) numa tabela com `CLASS_CNAE, DS_CNAE, CO_SEQ`, e `NM_DISTRIT`
+  para `NM_DISTRITO`; a nota do log diz qual coluna foi usada quando o nome não é exato. A regra: nome exato; depois os 10 primeiros
+  caracteres iguais (limite do DBF); depois coluna que contém o nome pedido. A heurística antiga (`ID_/CO_/CD_`) fica por último.
+- C2. `agravnet.csv` tem 14.465 linhas e devolve, por amostra conferida no texto dos `.cnv`: `A000`, `X450`, `M545`, `D170`, `Z999`
+  e as categorias de 3 letras (`X45`). Código de 4 caracteres que não existe na tabela cai na categoria de 3 (`lookup`, só para
+  código que começa por letra). Base sintética de acidente grave com `CID_ACID` recebe `CID_ACID_rotulo` com esses nomes.
+- C3. Com o `agravnet.csv` presente, a falha do `AGRAVNET.DBF` deixa de ser AVISO e vira nota (a tabela foi substituída, não perdida).
+- C4. Os 10 campos do bloco do empregador (`NUCNPJ_CPF`, `NOEMPRESA`, `DIS_EMP`, `COBAIEMP`, `NOBAIEMP`, `END_EMP`, `NU_EMP`,
+  `REF_EMP`, `DDD_EMP`, `FONE_EMP`) e mais `COMP_EMP`, `CEP_EMP`, `UF_EMP`/`SG_UF_EMP` quando existirem ganham nome por extenso de uma
+  tabela interna própria ("ficha de saúde do trabalhador (tabela interna)"), depois do dicionário CSV e dos `.def`, sem tirar nome de
+  campo que já tinha.
+- C5. Suíte completa passando (188 antes) e os testes sintéticos de ponta a ponta sem campo rotulado a menos.
+Consequência pré-registrada: ajuste que não atender ao seu critério é revertido e o achado volta ao PLANO como pendente; nenhum
+limiar é ajustado depois do resultado. A medida que vale (fração de registros com rótulo em CNAE e nos campos CID) só sai na
+próxima rodada nas bases reais, na SESA.
+Ressalva anotada antes: `CNAENET.DBF` tem 580 códigos de 5 dígitos, o que bate com as 581 classes da CNAE 1.0 (de memória). Se o
+export trouxer CNAE 2.0 (7 dígitos de subclasse), a tabela certa não casa e não se deve cortar o código para 5 dígitos, porque as
+classes mudaram de significado entre as versões; o log da próxima rodada diz quantos casam.
+Resultado (2026-10-29, mesma sessão):
+- C1 atendido. Regra em `lookup._match_column`: nome exato; 10 primeiros caracteres iguais; coluna única que contém o nome. A coluna
+  de nome é escolhida antes da de código, e excluída da busca do código, porque `cnae` está contido em `CLASS_CNAE` e em `DS_CNAE`
+  (a primeira versão da regra devolvia "ambíguo" e caía de novo em `CO_SEQ`; corrigido antes de medir). Nota no log quando o nome
+  não é exato (`coluna cnae lida de CLASS_CNAE`; `coluna NM_DISTRITO lida de NM_DISTRIT (nome cortado em 10 caracteres no DBF)`).
+- C2 atendido. `agravnet.csv` com 14.465 códigos (2.065 categorias de 3 e 12.400 subcategorias de 4), igual à soma dos cabeçalhos
+  dos 22 `.cnv`; nenhuma linha rejeitada, nenhum código repetido. Amostra conferida no texto dos `.cnv`: `A000`, `X45`, `X450`, `M545`,
+  `D170`, `Z999` (o nome que eu esperava para `Z999` estava errado; vale o do arquivo). `A002`, que não existe, cai em `A00` ("Cólera").
+  O parser do SIM não é o `cnv.parse_cnv` (cabeçalho `N 3693 4 L` e marcas `@`, `&`, `#` e `-` junto ao código, que o Sinan não usa);
+  o script tira o código repetido no fim da linha pelo valor, não pela coluna, porque rótulo longo deixa um só espaço antes dele.
+  Limite da fonte: o `.cnv` do TabWin corta o nome em cerca de 100 caracteres ("...resultando em doenças infecciosas e parasitá").
+- C3 atendido: com `agravnet.csv` presente, `AGRAVNET.DBF` sai como nota ("não pôde ser lida: sem a coluna …; substituída por
+  agravnet.csv"), não como AVISO. Sem a CSV o comportamento é o antigo.
+- C4 atendido: tabela `names.WORK_FORM` (17 campos: os 10 do bloco mais `COMP_EMP`, `CEP_EMP`, `UF_EMP`/`SG_UF_EMP`, `MUN_EMP`,
+  `CNPJ_PRIN`, `NOME_PRIN`), fonte "ficha de saúde do trabalhador (tabela interna)", consultada depois do CSV, da ficha de
+  notificação e dos `.def`. Os nomes seguem as fichas impressas de memória, não conferidos linha a linha; corrigir se a equipe apontar.
+- C5 atendido: 193 testes passando, 3 pulados, 183 s. Coletados: 192 antes, 196 agora, os 4 novos
+  `test_pick_columns_contains_and_truncated_names`, `test_cnae_table_labels_by_class_code`, `test_cid10_csv_answers_for_agravnet` e
+  `test_employer_block_gets_names_from_work_form_table` (os pulados são casos parametrizados de duplicidade que só valem para sífilis
+  em gestante; a contagem "188 e 4" da entrada anterior era de outra parametrização).
+Pendentes do mesmo teste, não pedidos: apelidos `.def`→export (8 campos em AIDSCNET, ANIMPNET, AIDSANET); perfil de duplicidade para
+antirrábico (806 pares em 10.595) e violência (278 em 5.285), hoje `agudo`; CNAE 2.0 se o export trouxer 7 dígitos.

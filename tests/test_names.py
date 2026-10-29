@@ -94,3 +94,16 @@ def test_alias_column_gets_def_name(tab_dir):
     assert r["BACILOSCO"].name and "bacilosc" in r["BACILOSCO"].name.lower(), r["BACILOSCO"]
     r2 = resolve_names(["DT_DESC3"], parse_def(tab_dir / "LeishtegNET.def"), tab_dir)
     assert r2["DT_DESC3"].name and "desloc" in r2["DT_DESC3"].name.lower(), r2["DT_DESC3"]
+
+
+def test_employer_block_gets_names_from_work_form_table(tab_dir, tmp_path):
+    """C4 (2026-10-29): the employer fields of the occupational-health forms, which no .def names, get a name from the
+    built-in table; a field the .def or a CSV already names keeps that name."""
+    from sinan_anotador.names import SOURCE_WORK_FORM, WORK_FORM
+    d = parse_def(tab_dir / "AcidGraveNET.def")
+    cols = ["NU_NOTIFIC", "NOEMPRESA", "NUCNPJ_CPF", "END_EMP", "FONE_EMP", "CNAE", "CS_SEXO", "XPTO"]
+    r = resolve_names(cols, d, tab_dir, None, csv_dir=tmp_path / "nenhum")
+    for c in ("NOEMPRESA", "NUCNPJ_CPF", "END_EMP", "FONE_EMP"):
+        assert r[c].name == WORK_FORM[c] and r[c].source == SOURCE_WORK_FORM
+    assert r["CNAE"].name and r["CNAE"].source != SOURCE_WORK_FORM       # the .def labels CNAE itself
+    assert r["CS_SEXO"].source == SOURCE_FORM and r["XPTO"].name is None

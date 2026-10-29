@@ -48,6 +48,8 @@ class LookupTable:
         lab = self._exact.get(code)
         if lab is None and code.isdigit():
             lab = self._numeric.get(int(code))
+        if lab is None and len(code) == 4 and code[0].isalpha() and code[1:3].isdigit():
+            lab = self._exact.get(code[:3])      # CID-10 subcategory the table lacks: fall back to its category (X450 -> X45)
         return lab
 
 
@@ -70,10 +72,34 @@ def find_lookup_file(name: str, tab_dir: Path) -> Path | None:
     return files[0] if files else None
 
 
+def _match_column(columns: list[str], wanted: str, notes: list[str], exclude: str | None = None) -> str | None:
+    """The column of a lookup file that stands for `wanted` (a column name written in a .def): the exact name; else the same
+    first 10 characters (a DBF cuts names at 10: the .def asks NM_DISTRITO, DISTRNET.dbf holds NM_DISTRIT); else the one column
+    whose name contains it (the .def asks `cnae`, CNAENET.DBF holds CLASS_CNAE). A non-exact match is noted for the log."""
+    columns = [c for c in columns if c != exclude]
+    up = {c.upper(): c for c in columns}
+    w = wanted.upper().strip()
+    if not w:
+        return None
+    if w in up:
+        return up[w]
+    if len(w) > 10 and w[:10] in up:
+        notes.append(f"coluna {wanted} lida de {up[w[:10]]} (nome cortado em 10 caracteres no DBF)")
+        return up[w[:10]]
+    if len(w) >= 3:
+        hits = [c for c in columns if w in c.upper()]
+        if len(hits) == 1:
+            notes.append(f"coluna {wanted} lida de {hits[0]}")
+            return hits[0]
+    return None
+
+
 def _pick_columns(columns: list[str], code_field: str, name_field: str, notes: list[str]) -> tuple[str, str]:
     up = {c.upper(): c for c in columns}
-    code = up.get(code_field.upper()) or up.get("CODIGO") or up.get("CO_CNES") or up.get("COD")
-    name = up.get(name_field.upper()) or up.get("NOME") or up.get("NO_FANTASIA") or up.get("DESCRICAO")
+    # the name column first: the code column is then looked for among the others (`cnae` is contained in both CLASS_CNAE
+    # and DS_CNAE of CNAENET.DBF; DS_CNAE is the name)
+    name = _match_column(columns, name_field, notes) or up.get("NOME") or up.get("NO_FANTASIA") or up.get("DESCRICAO")
+    code = _match_column(columns, code_field, notes, exclude=name) or up.get("CODIGO") or up.get("CO_CNES") or up.get("COD")
     if code is None and name is not None:
         # the .def names the code column after the DBF field (ATE_HOSP_1, PRE_UNIPRE, ID_UNID_AT...), but UNIDINVEST.dbf
         # keys every unit on ID_UNIDADE: the first ID_/CO_/CD_ column is the code column of the table

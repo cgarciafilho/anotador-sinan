@@ -144,3 +144,76 @@ def test_code_column_falls_back_to_first_id_column(tmp_path):
               [{"ID_UNIDADE": k, "NM_UNIDADE": v, "ID_ESTAB": k} for k, v in UNITS.items()], encoding="cp850")
     with pytest.raises(ValueError):
         load_lookup(tmp_path / "tres.dbf", "ATE_HOSP_1", "NM_OUTRA")     # no name column: still refused
+
+
+# --- 2026-10-29: what the 35 real SESA bases showed (METODO 2026-10-29, C1-C4) ---------------------------------------------
+
+def test_pick_columns_contains_and_truncated_names():
+    """C1: CNAENET.DBF holds CLASS_CNAE/DS_CNAE/CO_SEQ and the .def asks (cnae, ds_cnae); DISTRNET.dbf holds NM_DISTRIT and the
+    .def of esquistossomose asks NM_DISTRITO (DBF names stop at 10 characters). Before: CO_SEQ was taken as the code column."""
+    from sinan_anotador.lookup import _pick_columns
+    notes: list[str] = []
+    assert _pick_columns(["CLASS_CNAE", "DS_CNAE", "CO_SEQ"], "cnae", "ds_cnae", notes) == ("CLASS_CNAE", "DS_CNAE")
+    assert any("CLASS_CNAE" in n for n in notes)
+    notes = []
+    cols = ["ID_DISTRIT", "NM_DISTRIT", "ID_MUNICIP", "ID_DT_RESI", "ST_ATIVO", "ID_SISTEMA"]
+    assert _pick_columns(cols, "CODISINF", "NM_DISTRITO", notes) == ("ID_DISTRIT", "NM_DISTRIT")
+    assert any("10 caracteres" in n for n in notes)
+    # exact names still win and leave no note
+    notes = []
+    assert _pick_columns(["ID_UNIDADE", "NM_UNIDADE", "CO_CNES"], "ID_UNIDADE", "NM_UNIDADE", notes) == ("ID_UNIDADE", "NM_UNIDADE")
+    assert notes == []
+
+
+def test_cnae_table_labels_by_class_code(tab_dir, tmp_path):
+    d = tmp_path / "tab"
+    d.mkdir()
+    for p in def_files(tab_dir) + list(tab_dir.glob("*.cnv")) + list(tab_dir.glob("*.CNV")):
+        shutil.copy(p, d / p.name)
+    write_dbf(d / "CNAENET.DBF", [("CLASS_CNAE", "C", 5, 0), ("DS_CNAE", "C", 60, 0), ("CO_SEQ", "N", 5, 0)],
+              [{"CLASS_CNAE": "15890", "DS_CNAE": "FABRICACAO DE OUTROS PRODUTOS ALIMENTICIOS", "CO_SEQ": 69},
+               {"CLASS_CNAE": "45217", "DS_CNAE": "EDIFICACOES", "CO_SEQ": 300}])
+    t = load_lookup(d / "CNAENET.DBF", "cnae", "ds_cnae")
+    assert t.lookup("15890") == "FABRICACAO DE OUTROS PRODUTOS ALIMENTICIOS" and t.lookup("69") is None
+    fields = [("NU_NOTIFIC", "C", 7, 0), ("DT_NOTIFIC", "D", 8, 0), ("CNAE", "C", 5, 0), ("CS_SEXO", "C", 1, 0)]
+    recs = [dict(NU_NOTIFIC=f"{i:07d}", DT_NOTIFIC=dt.date(2026, 1, 1), CNAE=c, CS_SEXO="M")
+            for i, c in enumerate(["15890", "45217", "", "99999"])]
+    dbf = write_dbf(tmp_path / "ACGRANET.DBF", fields, recs)
+    ok, files = annotate_file(dbf, d, None, None, 1_048_575)
+    assert ok
+    header, rows = read_sheet(files[0], "dados")
+    assert column(header, rows, "CNAE_rotulo") == ["FABRICACAO DE OUTROS PRODUTOS ALIMENTICIOS", "EDIFICACOES", "Ign/Branco",
+                                                   "[99999] sem rótulo"]
+
+
+def test_cid10_csv_answers_for_agravnet(tab_dir, tmp_path):
+    """C2/C3: agravnet.csv (CID-10 from the TabWin of the SIM) labels CID_ACID; TabWin's AGRAVNET.DBF (no name column) is noted,
+    not warned about; a 4-character code the table lacks falls back to its 3-character category."""
+    csv_path = tab_dir / "agravnet.csv"
+    assert csv_path.exists()
+    t = load_lookup(csv_path, "CID_ACID", "NM_AGRAVO")
+    assert t.n_rows >= 14_400
+    assert t.lookup("A000") == "Cólera devida a Vibrio cholerae 01, biótipo cholerae"
+    assert t.lookup("X45") == "Envenenamento [intoxicação] acidental por e exposição ao álcool"
+    assert t.lookup("X450") == "Envenenamento [intoxicação] acidental por e exposição ao álcool - residência"
+    assert t.lookup("M545") == "Dor lombar baixa" and t.lookup("D170") == "Neoplasia lipomatosa benigna da pele e do tecido subcutâneo da cabeça, face e pescoço"
+    assert t.lookup("Z999") == "Dependência de máquina e aparelho capacitante não especificado"
+    assert t.lookup("A002") == t.lookup("A00") == "Cólera"      # subcategory the CID-10 lacks -> its category
+    assert t.lookup("2497654") is None and t.lookup("Q999") is not None
+    d = tmp_path / "tab"
+    d.mkdir()
+    for p in def_files(tab_dir) + list(tab_dir.glob("*.cnv")) + list(tab_dir.glob("*.CNV")) + [csv_path, tab_dir / "AGRAVNET.DBF"]:
+        shutil.copy(p, d / p.name)
+    fields = [("NU_NOTIFIC", "C", 7, 0), ("DT_NOTIFIC", "D", 8, 0), ("CID_ACID", "C", 4, 0), ("CS_SEXO", "C", 1, 0)]
+    recs = [dict(NU_NOTIFIC=f"{i:07d}", DT_NOTIFIC=dt.date(2026, 1, 1), CID_ACID=c, CS_SEXO="M")
+            for i, c in enumerate(["X450", "X45", "M545", "", "A002", "ZZZZ"])]
+    dbf = write_dbf(tmp_path / "ACGRANET.DBF", fields, recs)
+    ok, files = annotate_file(dbf, d, None, None, 1_048_575)
+    assert ok
+    header, rows = read_sheet(files[0], "dados")
+    assert column(header, rows, "CID_ACID_rotulo") == [
+        "Envenenamento [intoxicação] acidental por e exposição ao álcool - residência",
+        "Envenenamento [intoxicação] acidental por e exposição ao álcool", "Dor lombar baixa", "Ign/Branco",
+        "Cólera", "[ZZZZ] sem rótulo"]
+    log = Path(str(files[0]).replace("_anotado.xlsx", "_anotado.log.txt")).read_text(encoding="utf-8")
+    assert "AVISO tabela externa AGRAVNET.DBF" not in log and "substituída por agravnet.csv" in log
