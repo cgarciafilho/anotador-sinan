@@ -7,6 +7,16 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
 ## [Não lançado]
 
 ### Adicionado
+- Pacote completo do TabWin em `tabelas/tab_sinannet/`: 486 `.cnv`, 2 `.def` (animais peçonhentos e planilha de surto) e
+  `Diagnos.cnv` copiados do `TAB_SINANNET.zip` do DATASUS (arquivos de 04/2024). Cobertura de dicionário, medida por campo de
+  categoria nos `.def`: de 1.801 de 2.397 campos (75%) em 58 `.def` para 2.452 de 2.453 (100%) em 60 `.def`; só
+  `br_uf_nu_sg_dhx.cnv` (UF de infecção da leptospirose) segue ausente. A pasta de origem era uma extração parcial do zip
+  (138 dos 627 `.cnv`); nada se perdeu na publicação. `PfapolioNET.def` na versão de 2024 (cita `DIAGNOSCOPIA.CNV`).
+- `scripts/cobertura_campos.py`: por `.def`, quantos campos de categoria têm tabela, com o total e os campos sem tabela.
+- `.def` com extensão em maiúsculas (`AnimaispNET.DEF`, `PlanSurtoNet.DEF`) passam a ser lidos.
+
+### Corrigido
+- `.cnv` cujo cabeçalho traz um token a mais (`10  6   33X001`, tabelas de região de saúde) era rejeitado como "sem cabeçalho".
 - Nomes reais de export do Sinan NET reconhecidos pelo nome: `SIFICNET` (sífilis congênita), `LEISHNET` (leishmaniose
   visceral) e `MENINNET` (meningite), além dos já conhecidos.
 - Tabela `.cnv` que o `.def` cita e o pacote do TabWin não tem: quando o dicionário de dados do agravo em `tabelas/dicionarios/`

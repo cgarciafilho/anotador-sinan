@@ -88,7 +88,9 @@ class Cnv:
         return best.label if best else None
 
 
-RE_HEADER = re.compile(r"^\s*(\d+)\s+(\d+)(?:\s+([A-Za-z]))?\s*$")
+# "N largura [L]"; sete tabelas de região de saúde do TAB_SINANNET (rj_regsaudn.cnv…) trazem um token a mais
+# ("10  6   33X001"), que o TabWin ignora e aqui também é ignorado.
+RE_HEADER = re.compile(r"^\s*(\d+)\s+(\d+)(?:\s+([A-Za-z]))?(?:\s+\S.*)?\s*$")
 RE_LINE = re.compile(r"^\s*(\d+)\s+(.*)$")
 
 
@@ -227,6 +229,11 @@ RE_DEF_DBF = re.compile(
     r"^([A-Za-z])\s*([^,]*?)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(\S+?\.dbf)\s*$",
     re.IGNORECASE)
 RE_DEF_SUM = re.compile(r"^([A-Za-z])\s*([^,]*?)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*$")
+
+
+def def_files(tab_dir: Path) -> list[Path]:
+    """Os .def da pasta, qualquer caixa na extensão (o TAB_SINANNET traz AnimaispNET.DEF e PlanSurtoNet.DEF)."""
+    return sorted((p for p in Path(tab_dir).iterdir() if p.suffix.lower() == ".def"), key=lambda p: p.name.lower())
 
 
 def parse_def(path: Path) -> DefFile:

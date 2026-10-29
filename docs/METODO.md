@@ -518,3 +518,48 @@ ficha antiga de FHD).
 O segundo pacote (`TAB_SINANNET.zip` da SESA, 9,4 MB, sem os `.dbf` grandes) não pôde ser lido: o conector do Drive não
 entrega arquivo desse tamanho e o proxy do ambiente bloqueia `drive.google.com`; o upload direto no chat e o Remote Control
 para o computador do usuário também não funcionaram nesta sessão. Pendente.
+
+### 2026-10-29 — Pacote completo do TabWin em `tabelas/tab_sinannet/`: cobertura de dicionário de 75% para 100% dos campos
+Contexto: ao rodar a 0.3.0 em bases reais, vários campos saíram sem rótulo e a varredura de 28/10 achou 254 `.cnv` ausentes.
+O usuário temia que o dicionário tivesse se perdido na passagem do repositório privado para este. Conferido por checksum:
+`tabelas/` aqui é cópia byte a byte do dicionário do repositório de origem (só `UNIDTOTAL.DBF`, 272 MB, ficou fora, pelo
+limite do GitHub, como já registrado) mais as 9 tabelas de dengue/chik de 28/10. Nada se perdeu na publicação. A falta é
+anterior aos dois repositórios: a pasta herdada do projeto de origem era uma extração parcial do `TAB_SINANNET.zip`
+(138 `.cnv` dos 627 que o zip traz). Correção ao registro de 28/10: o zip nunca "tinha 134 `.cnv`"; a extração é que tinha.
+Fonte: `TAB_SINANNET.zip` do FTP do DATASUS (`SINAN/AUXILIAR/`), baixado em 22/10/2026, 44.001.396 bytes, sha256 `24ac0c62…`,
+700 entradas (627 `.cnv`, 60 `.def`, 13 `.dbf`), arquivos datados de 24/04/2024. Difere do zip baixado em 07/10/2026 só por
+`DIAGNOSCOPIA.cnv`. Dois pacotes do TabWin instalado na SESA-CE, recebidos em 28/10 (`TAB_SINANNET.zip` 9,4 MB, sha256
+`f29646e0…`, 627 `.cnv`, 59 `.def`, 12 `.dbf`; `TAB_SINANONLINE.zip` 244 KB, sha256 `5fdda9d1…`), comparados arquivo a arquivo.
+Medida, por campo de categoria nos `.def` (`scripts/cobertura_campos.py`, mesma regra do `build_plan`: fora agrupamentos de
+ano/mês, município e faixa etária): antes, 1.801 de 2.397 campos com tabela (75,1%) em 58 `.def`, 7 `.def` completos, 245
+`.cnv` ausentes em 51 `.def`; com o pacote do DATASUS, 2.452 de 2.453 (100,0%) em 60 `.def`, 59 completos, 1 `.cnv` ausente.
+Decisões:
+1. Copiados do pacote do DATASUS só os arquivos que faltavam: 486 `.cnv`, 2 `.def` (`AnimaispNET.DEF`, animais peçonhentos;
+   `PlanSurtoNet.DEF`, planilha de surto) e `Diagnos.cnv`, com os nomes do pacote. Nenhum arquivo existente foi substituído,
+   exceto `PfapolioNET.def`, que na versão de 2024 cita `DIAGNOSCOPIA.CNV` (existe) em vez de `DIAGNOS.CNV` e corrige o padrão
+   do DBF. As 6 tabelas de dengue de 28/10 (`Classdeng`, `ConfdescDeng2011`, `evodeng`, `Resultado`, `Sorodeng`, `TipoSistema`)
+   ficam na versão do TabWin da SESA, mais nova (`Classdeng` com a classificação de 2014: 10 categorias contra 6).
+   `dt_notific.cnv` (0 bytes, citado por nenhum `.def`) não entrou. Alternativa descartada: adotar o pacote inteiro
+   substituindo os existentes, porque as tabelas de município e as de dengue do repositório são iguais ou mais novas.
+2. `.def` com extensão em maiúsculas (`.DEF`) passam a ser lidos: `def_files()` em `cnv.py`, usado pelo programa, pelos
+   scripts e pelos testes no lugar de `glob("*.def")`. Sem isso os dois `.def` novos eram invisíveis.
+3. Cabeçalho de `.cnv` com um token a mais (`10  6   33X001`, nas sete `*_regsaudn.cnv` de região de saúde) é aceito;
+   antes o parser dizia "sem cabeçalho". Teste unitário com o formato.
+4. O teste da tabela reconstruída do dicionário (ESQUETER) passa a tirar os dois arquivos de uma cópia da pasta, porque o
+   caso real deixou de existir; confere também que, com a pasta real, a tabela real dá os mesmos rótulos que o CSV.
+O que fica sem tabela: `br_uf_nu_sg_dhx.cnv` (UF de infecção, `-LeptoNET`, não está em pacote nenhum), `localidade.dbf`
+(bairro em dengue/chik, idem) e `unidtotal.dbf` para um campo de coqueluche (está no repositório de origem, fora do git).
+Comparação com os pacotes da SESA (decisão pendente, do usuário): os 627 `.cnv` são iguais aos do DATASUS, salvo
+`Municro.cnv` (SESA acrescenta Guaraí/TO) e `Unid_Prisionais.CNV`, tabela local do Ceará (22 unidades prisionais com código
+CNES) citada só pelo `NotIndiviNet.def` da SESA. Os 59 `.def` da SESA diferem dos do DATASUS em todos os casos na linha
+`A` (padrão do nome do DBF): a SESA traz os nomes reais do export do Sinan NET (`TUBEN*.DBF`, `SifiCN*.DBF`, `LeishN*.DBF`,
+`MENINN*.DBF`), que o DATASUS escreve com prefixo curto (`Sifc*.DB?`), e foi isso que obrigou a tabela manual
+`KNOWN_DBF_PREFIXES`. Medido: com os padrões da SESA, `SIFICNET.DBF`, `NINDINET.DBF`, `EPIZONET.DBF` e `TETANNET.DBF` passam
+a casar o `.def` certo (hoje não casam ou casam o errado) e `LEPTONET.DBF`/`DENGONET.DBF` deixam de ser ambíguos; 53 de 59
+nomes casam um só `.def`, contra 47. Fora da linha `A`, cinco `.def` da SESA mudam conteúdo: `AntirabNET` (UF de residência por
+`SG_UF`, não `ID_MN_RESI`), `EsquisNET` (acrescenta distrito e bairro), `LeptoNET` (tira mês/trimestre de `DT_SIN_PRI`),
+`NotIndiviNet` (acrescenta `Unid_Prisionais`), `ViolenciaNet` (`CICL_VID_AUTOR`, 14 caracteres, impossível em nome de campo
+DBF: edição local errada). Proposta: adotar só as linhas `A` da SESA nos 60 `.def` (mantendo o corpo do DATASUS) e
+`Unid_Prisionais.CNV`; decidir os cinco conteúdos com as bases reais, campo a campo. Nada disso foi aplicado.
+Verificação: `scripts/tabelas_ausentes.py` e `scripts/cobertura_campos.py` depois da cópia (números acima); suíte completa,
+186 testes passando e 4 pulados (174 s). Não rodado em base real: o teste com as bases de todos os agravos está marcado para 29/10.

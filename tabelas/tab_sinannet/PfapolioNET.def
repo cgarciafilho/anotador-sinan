@@ -2,7 +2,7 @@
 ; Atualizado em 09/06/2008 pelo GT- Sinan/MS - Versão 2.0.0.0  incluidas uf mercosul
 ; Atualizado em 24/09/2010 pelo GT - Sinan/MS - inclusão de consulta segundo Núcleos Hospitalares de Epidemiologia-NHE (190 nucleos)
 
-Ac:\SinanNet\BaseDBF\PFA*.DB?
+Ac:\SinanNet\BaseDBF\PFAN*.DBF
 
 ;--    Definições para Ano, Mes, Semana e Trimestre da Notificação
 XAno da Notific,       DT_NOTIFIC,  1, ANOS.CNV
@@ -551,7 +551,7 @@ DMes 1ªEletroneuromiografia,LAB_DT_E_1,   5, MESES.CNV
 CMes 1ªEletroneuromiografia,LAB_DT_E_1,   5, MESESC.CNV
 SMes 1ªEletroneuromiografia,LAB_DT_E_1,   5, MESES.CNV
                                            
-XDiag.sug.1ªeletron.,LAB_E_D_1,1,DIAGNOS.CNV
+XDiag.sug.1ªeletron.,LAB_E_D_1,1,DIAGNOSCOPIA.CNV
                                                
 ;--DATA DA realização 2ªeletroneuromiografia
 ;--TAno 2ªEletroneuromiografia,LAB_DT_E_2,   1, Anos.cnv

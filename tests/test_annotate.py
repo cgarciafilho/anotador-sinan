@@ -119,12 +119,20 @@ def test_dbf_field_aliases_plan_and_outside_list(tab_dir):
     assert def_field("BACILOSCO") == "BACILOSCOP" and def_field("DT_DESC3") == "DT_DES3" and def_field("cs_sexo") == "CS_SEXO"
 
 
-def test_missing_cnv_rebuilt_from_dictionary_csv(tab_dir):
-    """ESQUETER.CNV / ESQUETERatu.CNV are cited by HansNET.def and absent from TAB_SINANNET.zip; dicionario_hans.csv carries
-    their categories (categorias_cnv), so ESQ_INI_N and ESQ_ATU_N get labels and the log says where they came from."""
-    d = parse_def(tab_dir / "HansNET.def")
+def test_missing_cnv_rebuilt_from_dictionary_csv(tab_dir, tmp_path):
+    """When a .cnv cited by the .def is absent and the agravo's dictionary CSV carries its categories (categorias_cnv), the
+    table is rebuilt in memory and the log says where it came from. ESQUETER.CNV / ESQUETERatu.CNV (HansNET.def) were the
+    real case until 2026-10-29 (the partial TAB_SINANNET extraction lacked them); the full package has them, so the test
+    removes the two files from a copy of the folder (symlinks) to keep exercising the fallback, then checks that with the
+    real folder the real table is used and gives the same labels."""
+    tab = tmp_path / "tab"
+    tab.mkdir()
+    for p in tab_dir.iterdir():
+        if p.name.upper() not in ("ESQUETER.CNV", "ESQUETERATU.CNV"):
+            (tab / p.name).symlink_to(p)
+    d = parse_def(tab / "HansNET.def")
     cols = ["ESQ_INI_N", "ESQ_ATU_N", "CS_SEXO"]
-    plan = build_plan(d, cols, {c: "C" for c in cols}, tab_dir)
+    plan = build_plan(d, cols, {c: "C" for c in cols}, tab, csv_dir=tab_dir.parent / "dicionarios")
     fp = plan.fields["ESQ_INI_N"]
     assert fp.cnv.name.startswith("ESQUETER.CNV (reconstruída de dicionario_hans.csv)")
     assert label_for("1", fp) == "PQT/PB/6 DOSES" and label_for("2", fp) == "PQT/MB/12 DOSES"
@@ -134,9 +142,15 @@ def test_missing_cnv_rebuilt_from_dictionary_csv(tab_dir):
     assert any(n.startswith("ESQ_INI_N: tabela ESQUETER.CNV ausente") for n in plan.notes), plan.notes
     assert not any("ESQ_INI_N" in w for w in plan.warnings)
     # without the CSV the field stays unlabelled and the table is still listed as missing
-    plan2 = build_plan(d, cols, {c: "C" for c in cols}, tab_dir, csv_dir=tab_dir / "nenhum")
+    plan2 = build_plan(d, cols, {c: "C" for c in cols}, tab, csv_dir=tab / "nenhum")
     assert "ESQ_INI_N" not in plan2.fields and "ESQUETER.CNV" in plan2.missing_cnv
     assert any(w.startswith("ESQ_INI_N: tabela ESQUETER.CNV citada no .def não está disponível") for w in plan2.warnings)
+    # with the real folder (full TAB_SINANNET) the real file wins and agrees with the dictionary
+    plan3 = build_plan(parse_def(tab_dir / "HansNET.def"), cols, {c: "C" for c in cols}, tab_dir)
+    fp3 = plan3.fields["ESQ_INI_N"]
+    assert fp3.cnv.name == "ESQUETER.CNV" and not plan3.missing_cnv
+    assert [label_for(c, fp3) for c in "123"] == [label_for(c, fp) for c in "123"]
+    assert label_for("3", plan3.fields["ESQ_ATU_N"]) == "OUTROS ESQUEMAS SUBSTITUTIVOS"
 
 
 def test_dose_recebida_table_switches_on_classopera(tab_dir):

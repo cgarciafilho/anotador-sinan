@@ -9,7 +9,7 @@ linguagem dos cadernos do Sinan e a regra que o sustenta, para **revisão humana
 Roda no Windows **sem instalar nada e sem administrador**: o zip traz um Python embutido. Não altera, apaga nem mescla
 registros; não envia nada pela rede; não grava fora da pasta do DBF.
 
-Desenvolvido para as áreas técnicas da Secretaria da Saúde do Ceará (SESA-CE), mas as tabelas do TabWin cobrem os 58
+Desenvolvido para as áreas técnicas da Secretaria da Saúde do Ceará (SESA-CE), mas as tabelas do TabWin cobrem os 60
 agravos do Sinan NET e o programa não depende de nada específico do Ceará, exceto a coluna de ADS nas abas de duplicidades.
 
 ## Baixar e usar
@@ -44,7 +44,8 @@ Acima de 1.048.575 registros (limite do Excel) a saída é dividida em um xlsx p
 ## O que não faz
 
 - Não decide duplicidade: tipo e ficha a manter são sugestões; a exclusão ou vinculação é feita no Sinan por quem tem autorização.
-- Campos cujo `.cnv` não veio com o TabWin (vários da dengue, por exemplo) ficam sem rótulo; o log diz quais.
+- Campos cujo `.cnv` o TabWin não distribui ficam sem rótulo; o log diz quais (hoje só a UF de infecção da leptospirose
+  e o bairro de dengue/chikungunya).
 - Ainda não preenche modelos de planilha dinâmica por agravo.
 
 ## Versões
@@ -105,7 +106,7 @@ em `tests/`, com verdade conhecida; o DBF real só é testado por quem o detém,
 src/sinan_anotador/   código (cnv.py, dbf.py, annotate.py, names.py, lookup.py, duplicates.py, excel.py, cli.py)
 tests/                testes e geradores de base sintética
 build/                anotar.bat, LEIA-ME.txt, o script que monta o zip e o que gera o manual em PDF
-tabelas/tab_sinannet/ .def/.cnv e DBFs do TAB_SINANNET (TabWin, DATASUS, 2021) e unidanet.csv (CNES, 2026)
+tabelas/tab_sinannet/ .def/.cnv (60 agravos, pacote completo de 2024) e DBFs do TAB_SINANNET (TabWin, DATASUS) e unidanet.csv (CNES, 2026)
 tabelas/dicionarios/  nomes por extenso dos campos (dicionários de dados do DATASUS: TB, hanseníase, LTA, LV)
 tabelas/regionalizacao_sesa_sr_ads.csv   município → ADS e superintendência regional (SESA-CE, 2022)
 scripts/              make_unidanet_csv.py: atualiza unidanet.csv a partir do CNES público

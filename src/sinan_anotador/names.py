@@ -21,7 +21,7 @@ import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
-from .cnv import DefFile, def_field, parse_def
+from .cnv import DefFile, def_field, def_files, parse_def
 
 # Sinan NET individual notification form (ficha de notificação/investigação, campos 1-30 e de controle).
 NOTIFICATION_FORM = {
@@ -222,7 +222,7 @@ def resolve_names(columns: list[str], deffile: DefFile | None, tab_dir: Path, pr
     pending = [c for c in columns if c.upper() not in csv_names and def_field(c) not in own
                and c.upper() not in NOTIFICATION_FORM]
     if pending:
-        defs = sorted(Path(tab_dir).glob("*.def"), key=lambda p: (p.stem != "NotIndiviNet", p.stem.lower()))
+        defs = sorted(def_files(tab_dir), key=lambda p: (p.stem != "NotIndiviNet", p.stem.lower()))
         for p in defs:
             if deffile and p.stem == deffile.name:
                 continue

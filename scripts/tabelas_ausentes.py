@@ -19,14 +19,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sinan_anotador.annotate import AGE_FIELD, GROUPING_CNV_RE, MUNICIPALITY_CNV_RE, UF_CNV_RE, tab_dir_default  # noqa: E402
-from sinan_anotador.cnv import find_cnv, parse_def  # noqa: E402
+from sinan_anotador.cnv import def_files, find_cnv, parse_def  # noqa: E402
 from sinan_anotador.lookup import find_lookup_files  # noqa: E402
 
 
 def sweep(tab: Path):
     by_def: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
     dbf_by_def: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
-    for p in sorted(tab.glob("*.def"), key=lambda p: p.name.lower()):
+    for p in def_files(tab):
         d = parse_def(p)
         for ln in d.lines:
             if ln.cnv:
@@ -49,7 +49,7 @@ def report(tab: Path) -> str:
             cited[c.upper()].add(dn)
             spelling.setdefault(c.upper(), c)
     out = [f"Tabelas citadas nos .def de {tab} e ausentes — {len(cited)} .cnv distintas, {len(by_def)} de "
-           f"{len(list(tab.glob('*.def')))} .def afetados", "",
+           f"{len(def_files(tab))} .def afetados", "",
            "== Lista única (nome, nº de .def que a citam) =="]
     for k in sorted(cited, key=lambda k: (-len(cited[k]), k)):
         out.append(f"  {spelling[k]:28s} {len(cited[k]):3d}  {', '.join(sorted(cited[k]))}")

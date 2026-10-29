@@ -8,7 +8,7 @@ import pytest
 
 from dbf_writer import write_dbf
 from sinan_anotador.cli import annotate_file
-from sinan_anotador.cnv import parse_def
+from sinan_anotador.cnv import def_files, parse_def
 from sinan_anotador.lookup import LookupTable, load_lookup
 from test_end_to_end import column, read_sheet
 
@@ -21,7 +21,7 @@ CBO = {"223505": "Enfermeiro", "322205": "Técnico de enfermagem", "999999": "Oc
 def tab_with_lookups(tab_dir, tmp_path_factory) -> Path:
     """A copy of the TabWin tables plus a synthetic unidanet.dbf (cp850) and ocupanet.csv."""
     d = tmp_path_factory.mktemp("tab")
-    for p in list(tab_dir.glob("*.def")) + list(tab_dir.glob("*.cnv")):
+    for p in def_files(tab_dir) + list(tab_dir.glob("*.cnv")):
         shutil.copy(p, d / p.name)
     write_dbf(d / "unidanet.dbf", [("ID_UNIDADE", "C", 7, 0), ("NM_UNIDADE", "C", 60, 0)],
               [{"ID_UNIDADE": k, "NM_UNIDADE": v} for k, v in UNITS.items()], encoding="cp850")
@@ -68,7 +68,7 @@ def test_units_and_occupation_get_labels(tab_with_lookups, tmp_path):
 def test_without_lookup_files_fields_are_skipped_with_message(tab_dir, tmp_path):
     bare = tmp_path / "tab"
     bare.mkdir()
-    for p in list(tab_dir.glob("*.def")) + list(tab_dir.glob("*.cnv")):
+    for p in def_files(tab_dir) + list(tab_dir.glob("*.cnv")):
         shutil.copy(p, bare / p.name)
     fields = [("NU_NOTIFIC", "C", 7, 0), ("ID_UNIDADE", "C", 7, 0), ("CS_SEXO", "C", 1, 0)]
     dbf = write_dbf(tmp_path / "TUBENET.DBF", fields, [dict(NU_NOTIFIC="0000001", ID_UNIDADE="2561492", CS_SEXO="M")])

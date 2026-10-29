@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from sinan_anotador.cnv import dbf_pattern_to_regex, find_cnv, parse_cnv, parse_def
+from sinan_anotador.cnv import dbf_pattern_to_regex, def_files, find_cnv, parse_cnv, parse_def
 
 
 def test_sexo(tab_dir):
@@ -93,6 +93,17 @@ def test_header_with_stray_comment(tab_dir):
     assert c.width == 1 and c.lookup("1") == "Caso Novo"
 
 
+def test_header_with_extra_token(tmp_path):
+    """rj_regsaudn.cnv and six other health-region tables of TAB_SINANNET write the header as "10  6   33X001": the third
+    token is not the usual single letter and must not stop the parse."""
+    p = tmp_path / "x_regsaudn.cnv"
+    p.write_bytes(b"     2  6                                                  33X001    \r\n"
+                  b"      1  33001 RJ Regiao A                                     330010\r\n"
+                  b"      2  33002 RJ Regiao B                                     330020\r\n")
+    c = parse_cnv(p)
+    assert c.width == 6 and len(c.categories) == 2 and c.lookup("330020").startswith("33002 RJ Regiao B")
+
+
 def test_all_cnv_parse(tab_dir):
     for p in tab_dir.glob("*.cnv"):
         c = parse_cnv(p)
@@ -113,7 +124,7 @@ def test_def_tuberculose(tab_dir):
 
 
 def test_all_defs_parse(tab_dir):
-    for p in tab_dir.glob("*.def"):
+    for p in def_files(tab_dir):
         d = parse_def(p)
         assert d.dbf_pattern and d.lines, p.name
 

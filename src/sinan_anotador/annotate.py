@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .cnv import Cnv, DefFile, DefLine, cnv_from_categories, dbf_pattern_to_regex, def_field, find_cnv, parse_cnv, parse_def
+from .cnv import Cnv, cnv_from_categories, dbf_pattern_to_regex, def_field, def_files, DefFile, DefLine, find_cnv, parse_cnv, parse_def
 from .lookup import LookupTable, find_lookup_files, load_lookup
 from .names import FieldName, load_csv_categories, resolve_names
 
@@ -105,14 +105,14 @@ def tab_dir_default(start: Path | None = None) -> Path | None:
     for base in [here, *here.parents]:
         for rel in ("tabelas/tab_sinannet", "tab_sinannet"):
             cand = base / rel
-            if cand.is_dir() and any(cand.glob("*.def")):
+            if cand.is_dir() and def_files(cand):
                 return cand
     return None
 
 
 # ----------------------------------------------------------------------------- choosing the .def
 def load_defs(tab_dir: Path) -> list[DefFile]:
-    return [parse_def(p) for p in sorted(Path(tab_dir).glob("*.def"))]
+    return [parse_def(p) for p in def_files(tab_dir)]
 
 
 def detect_def(dbf_name: str, columns: list[str], tab_dir: Path) -> tuple[DefFile | None, list[str]]:
