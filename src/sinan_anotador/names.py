@@ -183,6 +183,9 @@ def _first_word(name: str) -> str:
     return re.split(r"[^a-z0-9]+", w.strip())[0] if w.strip() else ""
 
 
+MAX_CATEGORY_LABEL = 100     # longest text accepted as a category label from a dictionary CSV (see load_csv_categories)
+
+
 def load_csv_categories(folder: Path | None, def_name: str | None) -> dict[str, tuple[list[tuple[str, str]], str]]:
     """field -> (categories as (codes, label) pairs, csv file) from the disease's OWN dictionary CSV: column
     `categorias_cnv` ("0-9=Ign/Branco;1=PQT/PB/6 DOSES;...", copied from the .cnv when the dictionary was extracted), else
@@ -217,7 +220,9 @@ def load_csv_categories(folder: Path | None, def_name: str | None) -> dict[str, 
                 continue
             codes, label = part.split("=", 1)
             codes, label = codes.strip(), " ".join(label.split())
-            if codes and label and re.fullmatch(r"[0-9A-Za-z_\-, ]+", codes):
+            # a "label" longer than 100 characters is a sentence of the PDF that the extractor read as a category (ID_AGRAVO in
+            # every dictionary: "10=e nomes dos agravos classificados como notificação compulsória…"), not a category
+            if codes and label and len(label) <= MAX_CATEGORY_LABEL and re.fullmatch(r"[0-9A-Za-z_\-, ]+", codes):
                 cats.append((codes, label))
         if not cats:
             continue

@@ -217,3 +217,28 @@ def test_dengue_criterio_table_follows_notification_year(tab_dir):
     # 2010: the old table has no code 3 and its blank line covers 0-9, so 3 reads as Ign/Branco; 2024: 'Em Investigação'
     assert out["CRITERIO_rotulo"].tolist() == ["Laboratórial", "Ign/Branco", "Em Investigação", "Clínico-epidemiológico"]
     assert out["CLASSI_FIN_rotulo"].tolist() == ["Dengue Clássico", "Dengue", "Dengue com sinais de alarme", "Dengre grave"]
+
+
+def test_fields_outside_def_labelled_from_disease_dictionary_csv(tab_dir):
+    """SifilisNET.def does not describe the clinical signs of congenital syphilis (CLI_ANEMIA, HEPATO, LESOES...), CS_GESTANT nor
+    CS_ESCOL_N, so no .cnv answers for them; dicionario_sifc.csv (official data dictionary, 2026-10-30) carries their categories
+    under the names the SESA export uses. Those fields get a plan from the CSV, with a note; fields the CSV lists as free text
+    (SIN_OUTR_E, 'outro, especificar') or without categories (UF_PRE_NAT) stay unlabelled; fields in the .def keep their .cnv."""
+    d = parse_def(tab_dir / "SifilisNET.def")
+    signs = ["CLI_ASSINT", "CLI_ICTERI", "CLI_ANEMIA", "CLI_ESPLEN", "CLI_OSTEO", "CLI_RINITE", "HEPATO", "LESOES", "CLI_PSEUDO",
+             "CLI_OUTRO", "CS_GESTANT", "CS_ESCOL_N"]
+    assert not any(f in d.fields for f in signs)
+    cols = signs + ["SIN_OUTR_E", "UF_PRE_NAT", "CS_SEXO", "CS_RACA"]
+    plan = build_plan(d, cols, {c: "C" for c in cols}, tab_dir, csv_dir=tab_dir.parent / "dicionarios")
+    for f in signs:
+        assert f in plan.fields, f
+        assert "dicionario_sifc.csv" in plan.fields[f].cnv.name
+    assert label_for("1", plan.fields["CLI_ANEMIA"]) == "sim" and label_for("9", plan.fields["HEPATO"]) == "ignorado"
+    assert label_for("2", plan.fields["CLI_ASSINT"]) == "sintomático"
+    assert label_for("3", plan.fields["CS_GESTANT"]).startswith("3º Trimestre")
+    assert "SIN_OUTR_E" not in plan.fields and "UF_PRE_NAT" not in plan.fields
+    assert "dicionario_sifc" not in plan.fields["CS_SEXO"].cnv.name      # .def field: still the TabWin .cnv
+    assert sum(1 for n in plan.notes if "campo que o .def não descreve; categorias tomadas de dicionario_sifc.csv" in n) == 12
+    # without the dictionaries folder nothing changes for these fields
+    plan2 = build_plan(d, cols, {c: "C" for c in cols}, tab_dir, csv_dir=tab_dir / "nenhum")
+    assert not any(f in plan2.fields for f in signs)

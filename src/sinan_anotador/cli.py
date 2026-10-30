@@ -79,9 +79,12 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
             log(f"Campos rotulados: {n_lab} de {len(df.columns)}"
                 + (f" (idade em anos em {plan.age_field}_anos)" if plan.age_field else "")
                 + f" — anotação em {time.time() - t_read:.1f} s")
-            outside = [c for c in df.columns if def_field(c) not in deffile.fields]
+            outside = [c for c in df.columns if def_field(c) not in deffile.fields and c not in plan.fields]
             if outside:
                 log(f"  Campos do DBF que o .def não descreve ({len(outside)}), copiados sem rótulo: {', '.join(outside)}")
+            from_csv = [c for c in df.columns if def_field(c) not in deffile.fields and c in plan.fields]
+            if from_csv:
+                log(f"  Campos fora do .def rotulados pelo dicionário CSV do agravo ({len(from_csv)}): {', '.join(from_csv)}")
             for name, t in plan.lookups.items():
                 log(f"  Tabela externa {t.name}: {t.n_rows} códigos" + (f" ({'; '.join(t.notes)})" if t.notes else ""))
             for fld, cov in plan.coverage.items():

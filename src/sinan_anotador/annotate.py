@@ -366,6 +366,24 @@ def build_plan(deffile: DefFile, columns: list[str], field_types: dict[str, str]
         if len(distinct) > 1:
             warnings.append(f"{fld}: mais de uma tabela de categorias no .def ({', '.join(sorted(distinct))}); usada {c.name}")
         plans[col] = FieldPlan(col, c, ln.start or 1, [], def_label=ln.label)
+
+    # fields the .def does not describe, but the disease's own dictionary CSV lists with categories: the clinical signs of
+    # congenital syphilis (CLI_ANEMIA, HEPATO, LESOES...), CS_GESTANT and CS_ESCOL_N are absent from SifilisNET.def, so TabWin
+    # never tabulates them; the official data dictionary (PDF) does, and dicionario_sifc.csv carries it (2026-10-30)
+    for col in columns:
+        if col in plans or col == age_field:
+            continue
+        fld = def_field(col)
+        if fld in by_field:
+            continue
+        hit = csv_cats.get(fld) or csv_cats.get(col.upper())
+        if hit is None:
+            continue
+        cats, csv_name = hit
+        c = cnv_from_categories(f"{fld} ({csv_name}, campo fora do .def)", cats)
+        plans[col] = FieldPlan(col, c, 1, [], def_label="")
+        notes.append(f"{fld}: campo que o .def não descreve; categorias tomadas de {csv_name} "
+                     f"({'; '.join(f'{k}={v}' for k, v in cats)})")
     return Plan(deffile, plans, age_field, age_band, warnings, skipped, lookups, notes=notes, missing_cnv=missing_cnv)
 
 

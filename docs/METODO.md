@@ -673,3 +673,57 @@ não dá para dizer se o resto é CNAE 2.0 (classe de 5 dígitos ausente da tabe
 da 2.0 coincidiu com um da 1.0 e recebeu nome errado; medir isso exige ver os códigos (próximo passo, a decidir pelo usuário).
 Nomes por extenso: 3.544 → 3.627 de 3.959 (415 → 332 sem nome), a diferença toda no bloco do empregador. `DISTRNET.dbf` da
 esquistossomose carrega. AVISO nos logs: 18 → 11. Duplicidades iguais, base a base.
+
+### 2026-10-30 — Dicionários de sífilis congênita e em gestante; categorias do CSV também para campos que o .def não descreve
+
+**Contexto.** Na segunda rodada nas bases da SESA (entrada anterior), SIFICNET (205 registros) ficou com 14 variáveis codificadas sem
+rótulo, entre elas 10 sinais clínicos (CLI_ASSINT, CLI_ICTERI, CLI_ANEMIA, CLI_ESPLEN, CLI_OSTEO, CLI_RINITE, HEPATO, LESOES,
+CLI_PSEUDO, CLI_OUTRO), CS_GESTANT e CS_ESCOL_N. Conferido no `SifilisNET.def`: esses campos não existem lá, então o TabWin não os
+tabula e nenhuma `.cnv` responde por eles. O programa já espera `dicionarios/dicionario_sifc.csv` e `dicionario_sifg.csv`
+(`names.DEF_TO_CSV`), que nunca existiram. Hoje as categorias de um dicionário CSV só entram quando o `.def` cita uma `.cnv`
+ausente do pacote; campo que o `.def` nem descreve recebe do CSV só o nome por extenso.
+
+**Decisão (pedido do usuário, 30/10: "procura o que temos de dicionário de sífilis congênita para atualizarmos").** (1) Gerar os dois
+CSVs pela cadeia já existente do projeto de análise (`g04_extract_dictionary.py` + `g04b_merge_generic_dictionary.py`, PDFs
+oficiais `DIC_DADOS_Sifilis_Congenita_v5.pdf` e `DIC_DADOS_Gestante_Sifilis_v5.pdf`, SINAN NET 5.0), sem escrever linha de memória.
+(2) No anotador, campo do DBF que o `.def` não descreve mas que o dicionário CSV do agravo traz com categorias passa a ser rotulado
+por elas, com nota no log dizendo a fonte. Alternativa descartada: escrever as categorias à mão no `names.py` (não auditável).
+
+**Critérios de aceite, escritos antes de rodar.**
+- C1: `dicionario_sifc.csv` traz os 12 campos acima com categorias (códigos=rótulos), sob o nome que o export da SESA usa (o PDF
+  imprime `SIN_ANEM_C` e manda "manter o nome do SINAN-W: CLI_ANEMIA"; vale o nome SINAN-W). Nenhuma linha editada à mão; correções
+  só no extrator, registradas no projeto de análise.
+- C2: base sintética SIFICNET com esses 12 campos: todos saem com rótulo tomado do CSV, com nota no log; os campos do `.def`
+  continuam rotulados pelos `.cnv` (os testes existentes de TB/hans/LTA/LV não mudam).
+- C3: suíte inteira passa; coletados 196 antes → pelo menos 197 depois.
+- Reprovação: o CSV fica fora do zip da 0.4.0 e o item volta ao PLANO como pendente, sem ajuste pós-hoc.
+- Medidos sem exigência: UF_PRE_NAT e ANT_UF_CRI (códigos de UF; o `.def` não os cita); `dicionario_sifg.csv` para SIFGENET.
+
+**Resultado (2026-10-30).**
+- C1 atendido: `dicionario_sifc.csv` com 85 linhas, 37 com categorias; os 12 campos presentes com categorias sob o nome SINAN-W
+  (`1=sim;2=não;3=não se aplica;9=ignorado` nos 9 sinais; `CLI_ASSINT` `1=assintomático;2=sintomático;…`; `CS_GESTANT` e
+  `CS_ESCOL_N` com as categorias do PDF). Três correções no extrator do projeto de análise, todas registradas lá (commit adbac8a):
+  a célula DBF que imprime "SIN_ANEM_C … nome da variável no SINAN-W: CLI_ANEMIA, manter o nome do SINAN-W" passa a dar o nome
+  SINAN-W, com a troca anotada na coluna `regras` da linha; a tabela "Resumo das críticas" da p. 19, que não é dicionário, é
+  pulada e listada; o PDF da gestante tem colunas separadoras vazias (8 e 10 células por linha), mapeadas pelo cabeçalho. Uma
+  correção manual registrada em `dictionary_manual_fixes.csv`: `SIN_OUTR_E` ("outro, especificar", texto de 20 caracteres) vinha
+  com as categorias do campo anterior impressas por engano no PDF; categorias zeradas, com o motivo. Os limiares fixos do extrator
+  (20 campos no PDF, 30 no `.def`) viraram 80% do intervalo declarado e 20 (a gestante tem 15 campos e 28 no `.def`).
+  `UF_PRE_NAT` e `ANT_UF_CRI` vêm sem categorias no PDF: continuam sem rótulo. `dicionario_sifg.csv`: 53 linhas, 17 com
+  categorias; `PRE_SISPRE`, `DSTITULO1` e `DSMOTIVO` são texto, ficam sem rótulo por desenho.
+- C2 atendido: `test_fields_outside_def_labelled_from_disease_dictionary_csv` (base sintética com os 12 campos, `SIN_OUTR_E`,
+  `UF_PRE_NAT`, `CS_SEXO`, `CS_RACA`): os 12 saem do CSV com nota, `SIN_OUTR_E` e `UF_PRE_NAT` ficam sem plano, `CS_SEXO` segue na
+  `.cnv` do TabWin; sem a pasta de dicionários nada muda. Teste vizinho de hanseníase (ESQUETER) passa igual.
+- C3, primeira rodada: **1 falha** em 197 coletados (`test_real_tabwin_tables`: `ID_AGRAVO_rotulo` apareceu no xlsx de TB). Causa: em todos
+  os seis dicionários CSV a linha de `ID_AGRAVO` traz na coluna `categorias` uma frase do PDF lida como categoria
+  ("10=e nomes dos agravos classificados como notificação compulsória…"), e o ramo novo, que vale para qualquer campo fora do `.def`,
+  a tomou como tabela. Correção antes de medir de novo: `load_csv_categories` rejeita rótulo com mais de 100 caracteres
+  (`MAX_CATEGORY_LABEL`); uma frase não é categoria. Não é ajuste do critério: o critério C2/C3 é que os campos do `.def` e os testes
+  existentes não mudem, e foi isso que a falha mediu.
+- Efeito colateral medido, não previsto no critério: o ramo novo também rotula, nos outros cinco agravos com dicionário, campos
+  fora do `.def` cujo CSV traz categorias (levantamento com `load_csv_categories` × `parse_def`): em todos, `TP_NOT`, `NDUPLIC_N`,
+  `IN_VINCULA`, `CS_FLXRET`, `MIGRADO_W`; na TB, também `POP_IMIG`, `POP_LIBER`, `POP_RUA`, `POP_SAUDE`, `BENEF_GOV`, `AGRAVDROGA`,
+  `AGRAVTABAC`, `ANT_RETRO`, `BAC_APOS_6`, `TEST_MOLEC`, `TEST_SENSI`, `EXTRAPU_N`, `TRANSF`; na LTA, `CON_CLASS` e `TRA_DROGA`.
+  São categorias copiadas do PDF oficial e dos `.cnv`, e esses campos saíam sem rótulo; mantido, registrado no CHANGELOG. Chaves
+  que não são nome de coluna (`AGRAVDROGAS`, `ANTIRRETROVIRAL`, uma observação do PDF da hanseníase lida como variável) nunca casam.
+- C3 atendido na segunda rodada: 197 coletados (196 antes, 1 novo), 194 passando, 3 pulados, 175 s.
