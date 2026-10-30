@@ -14,8 +14,8 @@ authors:
 version: 0.4.0
 date-released: 2026-10-30
 license: MIT
-# `doi` recebe o DOI próprio da v0.4.0 depois da publicação do release no Zenodo; até lá, o DOI de conceito.
-doi: 10.5281/zenodo.23715001
+# `doi` é o DOI próprio da versão (emitido pelo Zenodo na publicação do release); o DOI de conceito fica em identifiers.
+doi: 10.5281/zenodo.23805076
 identifiers:
   - type: doi
     value: 10.5281/zenodo.23715001
@@ -26,6 +26,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23735267
     description: "DOI da v0.3.0 no Zenodo"
+  - type: doi
+    value: 10.5281/zenodo.23805076
+    description: "DOI da v0.4.0 no Zenodo"
 repository-code: "https://github.com/cgarciafilho/anotador-sinan"
 keywords:
   - Sinan
