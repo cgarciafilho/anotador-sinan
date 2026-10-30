@@ -47,6 +47,11 @@ Acima de 1.048.575 registros (limite do Excel) a saída é dividida em um xlsx p
 - Campos cujo `.cnv` o TabWin não distribui ficam sem rótulo; o log diz quais (hoje só a UF de infecção da leptospirose
   e o bairro de dengue/chikungunya).
 - Ainda não preenche modelos de planilha dinâmica por agravo.
+- **Em revisão: CNAE nas fichas de saúde do trabalhador** (acidente de trabalho grave, exposição a material biológico,
+  intoxicação exógena, LER/DORT, transtorno mental, PAIR, câncer e dermatose relacionados ao trabalho). A tabela de CNAE que o
+  TabWin distribui é a CNAE 1.0 (580 classes de 5 dígitos); numa rodada com bases reais de 2026, 45% dos códigos preenchidos
+  ficaram sem nome e parte dos que receberam nome pode ter recebido o da classe homônima da CNAE 1.0. Até a próxima versão,
+  trate `CNAE_rotulo` e `CNAE_PRIN_rotulo` como provisórios; os demais campos dessas fichas, inclusive os CID, não são afetados.
 
 ## Versões
 
@@ -63,11 +68,12 @@ publicada junto. Enquanto a versão for `0.x`, a forma das abas e das colunas po
 Cada release recebe um DOI no Zenodo, que arquiva o código-fonte da versão. O DOI de conceito
 [10.5281/zenodo.23715001](https://doi.org/10.5281/zenodo.23715001) representa todas as versões e resolve sempre para a
 mais recente; use-o para citar o programa em geral. Para reprodutibilidade, cite o DOI da versão usada: a v0.2.0 é
-[10.5281/zenodo.23715002](https://doi.org/10.5281/zenodo.23715002); o da v0.3.0 é anotado aqui e em
+[10.5281/zenodo.23715002](https://doi.org/10.5281/zenodo.23715002) e a v0.3.0 é
+[10.5281/zenodo.23735267](https://doi.org/10.5281/zenodo.23735267); o da v0.4.0 é anotado aqui e em
 [`CITATION.cff`](CITATION.cff) assim que o Zenodo o emitir, na publicação do release (o GitHub mostra "Cite this
 repository" na barra lateral). Forma sugerida, com o DOI da versão quando houver:
 
-> Garcia Filho, C. (2026). *anotador SINAN* (v0.3.0) [software]. Zenodo. https://doi.org/10.5281/zenodo.23715001
+> Garcia Filho, C. (2026). *anotador SINAN* (v0.4.0) [software]. Zenodo. https://doi.org/10.5281/zenodo.23715001
 
 ## Método e documentação
 

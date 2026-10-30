@@ -11,10 +11,10 @@ authors:
     given-names: Carlos
     name-suffix: Filho
     orcid: "https://orcid.org/0000-0002-0345-6033"
-version: 0.3.0
-date-released: 2026-10-28
+version: 0.4.0
+date-released: 2026-10-30
 license: MIT
-# `doi` recebe o DOI próprio da v0.3.0 depois da publicação do release no Zenodo; até lá, o DOI de conceito.
+# `doi` recebe o DOI próprio da v0.4.0 depois da publicação do release no Zenodo; até lá, o DOI de conceito.
 doi: 10.5281/zenodo.23715001
 identifiers:
   - type: doi
@@ -23,6 +23,9 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.23715002
     description: "DOI da v0.2.0 no Zenodo"
+  - type: doi
+    value: 10.5281/zenodo.23735267
+    description: "DOI da v0.3.0 no Zenodo"
 repository-code: "https://github.com/cgarciafilho/anotador-sinan"
 keywords:
   - Sinan

@@ -47,10 +47,16 @@ O QUE NÃO FAZ
 - Não decide duplicidade: o tipo e a ficha a manter são sugestões para revisão humana. A exclusão ou vinculação é feita no
   Sinan por quem tem autorização. As abas de duplicidades também trazem nome do paciente e valem as mesmas regras de sigilo.
 - Ainda não preenche modelos de planilha dinâmica (próxima etapa).
-- Campos cujo .cnv não veio com o TabWin (ex.: vários da dengue) ficam sem rótulo; o log diz quais.
+- Campos cujo .cnv o TabWin não distribui ficam sem rótulo; o log diz quais (hoje só a UF de infecção da leptospirose e o
+  bairro de dengue/chikungunya).
+- EM REVISÃO: o CNAE das fichas de saúde do trabalhador (acidente grave, material biológico, intoxicação exógena, LER/DORT,
+  transtorno mental, PAIR, câncer e dermatose do trabalho). A tabela de CNAE do TabWin é a CNAE 1.0; em bases reais de 2026,
+  45% dos códigos ficaram sem nome e parte dos nomes dados pode ser da classe homônima da CNAE 1.0. Trate CNAE_rotulo e
+  CNAE_PRIN_rotulo como provisórios até a próxima versão; os demais campos dessas fichas, inclusive os CID, não são afetados.
 - Unidade de saúde (CNES) ganha o nome atual do CNES público (unidanet.csv, 640 mil unidades, setembro de 2026) e, para
   unidades desativadas, o nome das tabelas do TabWin de 2021; ocupação (CBO), regional, país e distrito vêm das tabelas do
-  TabWin. Bairro e agravo ficam sem nome (as tabelas do DATASUS vêm vazias ou sem nomes). Unidade que não está em nenhuma
+  TabWin; os campos CID (agravo, causa do acidente, diagnóstico) vêm da CID-10 completa (agravnet.csv, do TabWin do SIM).
+  Bairro fica sem nome (a tabela do DATASUS vem vazia; o nome já está em NM_BAIRRO). Unidade que não está em nenhuma
   tabela sai "[código] sem rótulo"; o log conta quantas.
 
 COMO USAR

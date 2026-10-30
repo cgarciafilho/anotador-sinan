@@ -4,9 +4,27 @@ Formato de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); numeraç
 `MAIOR.MENOR.CORREÇÃO`. Enquanto a versão for `0.x`, a forma das abas e das colunas ainda pode mudar entre versões menores.
 Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para Windows e sua soma sha256.
 
-## [Não lançado]
+## [0.4.0] - 2026-10-30
+
+### Em revisão
+- CNAE nas oito fichas de saúde do trabalhador (`CNAE`, `CNAE_PRIN`): a tabela do TabWin é a CNAE 1.0 (580 classes de 5 dígitos).
+  Em 35 bases reais de 2026, 45% dos códigos preenchidos ficaram sem nome (1.258 de 2.805), e um código da CNAE 2.0 que coincida com
+  um da 1.0 recebe o nome errado sem aviso. Os rótulos de CNAE desta versão são provisórios; estamos levantando os códigos reais
+  para decidir a tabela. Os outros campos dessas fichas, inclusive os CID, não são afetados.
 
 ### Adicionado
+- Dicionários de sífilis congênita (`tabelas/dicionarios/dicionario_sifc.csv`, 85 campos, 37 com categorias) e de sífilis em
+  gestante (`dicionario_sifg.csv`, 53 campos, 17 com categorias), extraídos dos dicionários de dados oficiais do Sinan NET 5.0
+  (`DIC_DADOS_Sifilis_Congenita_v5.pdf`, `DIC_DADOS_Gestante_Sifilis_v5.pdf`) pela mesma cadeia que gerou os de TB, hanseníase, LTA
+  e LV, sem linha escrita à mão. Os sinais clínicos da criança saem com o nome que o export usa (`CLI_ANEMIA`, `HEPATO`,
+  `LESOES`…), que o próprio PDF manda manter ("nome da variável no SINAN-W").
+- Campo do DBF que o `.def` não descreve, mas que o dicionário CSV do agravo traz com categorias, passa a ser rotulado por elas,
+  com nota no log ("campo que o .def não descreve; categorias tomadas de dicionario_sifc.csv"). Na sífilis congênita isso dá rótulo
+  a 12 variáveis que o TabWin nunca tabulou: 10 sinais clínicos, `CS_GESTANT` e `CS_ESCOL_N`. O log lista esses campos em linha
+  própria, separados dos "copiados sem rótulo". Nos outros agravos com dicionário o mesmo mecanismo rotula campos de sistema e
+  de investigação que o TabWin não tabula (`TP_NOT`, `NDUPLIC_N`, `IN_VINCULA`, `CS_FLXRET`, `MIGRADO_W`; na tuberculose, também
+  populações especiais, teste molecular, sensibilidade, agravos associados e transferência; na LTA, `CON_CLASS` e `TRA_DROGA`).
+  Texto com mais de 100 caracteres na coluna de categorias do CSV é descartado (é frase do PDF, não categoria).
 - `tabelas/tab_sinannet/agravnet.csv`: CID-10 completa (14.465 códigos, categorias de 3 e subcategorias de 4 caracteres) tirada dos
   22 `.cnv` por capítulo do TabWin do SIM (`OBITOS_CID10_TAB.zip`, DATASUS), por `scripts/make_agravnet_csv.py`. Dá nome aos campos
   CID das fichas de saúde do trabalhador (`CID_ACID`, `DIAG_ESP`, `DIAG_CONF`, `CID_LESAO`), que saíam sem rótulo porque o
