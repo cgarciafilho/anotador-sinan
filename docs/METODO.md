@@ -664,3 +664,12 @@ Resultado (2026-10-29, mesma sessão):
   em gestante; a contagem "188 e 4" da entrada anterior era de outra parametrização).
 Pendentes do mesmo teste, não pedidos: apelidos `.def`→export (8 campos em AIDSCNET, ANIMPNET, AIDSANET); perfil de duplicidade para
 antirrábico (806 pares em 10.595) e violência (278 em 5.285), hoje `agudo`; CNAE 2.0 se o export trouxer 7 dígitos.
+
+**Resultado nas bases reais (2026-10-30; mesma rodada de 35 bases, 01/01–01/03/2026, feita em 29/10 com o zip montado deste commit).**
+Campos CID (CID_ACID, CID_LESAO, DIAG_CONF, DIAG_ESP, 7 campos em 6 bases): 5.084 registros preenchidos, 5.084 rotulados por
+`agravnet.csv`, 0 sem rótulo (antes: todos sem rótulo). CNAE e CNAE_PRIN (8 campos em 7 bases): 2.805 preenchidos, 1.547 rotulados,
+1.258 sem rótulo (44,8%; antes 100%); em ACGRANET, 412 códigos distintos, 195 com rótulo. O log não lista os códigos sem rótulo, então
+não dá para dizer se o resto é CNAE 2.0 (classe de 5 dígitos ausente da tabela 1.0, ou subclasse de 7 dígitos) nem se algum código
+da 2.0 coincidiu com um da 1.0 e recebeu nome errado; medir isso exige ver os códigos (próximo passo, a decidir pelo usuário).
+Nomes por extenso: 3.544 → 3.627 de 3.959 (415 → 332 sem nome), a diferença toda no bloco do empregador. `DISTRNET.dbf` da
+esquistossomose carrega. AVISO nos logs: 18 → 11. Duplicidades iguais, base a base.
