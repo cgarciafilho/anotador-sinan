@@ -36,6 +36,9 @@ Revisão de código do pacote inteiro (2026-11-04; critério e resultado em `doc
   (decimal, `int(nan)`); a linha é ignorada.
 - `--saida` que não pode ser criada: a falha estourava fora do `try`, abortava o lote todo e não deixava log; agora é uma
   falha registrada, com o log gravado ao lado do DBF.
+- Gravação do xlsx: as colunas de data passam a ser reconhecidas pelo tipo ou pelo primeiro valor preenchido, em vez de uma
+  função Python por célula de toda a tabela. Medido num quadro de 17.201 × 200: a varredura caiu de 0,41 s para 0,01 s e a
+  gravação de 26,8 s para 25,8 s (mediana de 3); o resto do tempo é o próprio openpyxl, célula a célula.
 
 ## [0.4.0] - 2026-10-30
 

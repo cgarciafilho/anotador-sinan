@@ -43,14 +43,30 @@ def _cell_value(v):
     return v, False
 
 
+def _date_columns(df: pd.DataFrame) -> set[int]:
+    """Positions of the columns that hold dates: datetime dtype, or an object column whose first non-null value is a date
+    (a DBF field has one type, so one value decides). Replaces a Python lambda over every cell (code review 2026-11-04,
+    finding 8; measured at 0.4 s of 27 s on a 17.201 x 200 frame)."""
+    out: set[int] = set()
+    for i, c in enumerate(df.columns):
+        s = df[c]
+        if pd.api.types.is_datetime64_any_dtype(s.dtype):
+            out.add(i)
+            continue
+        if s.dtype == object:
+            k = s.first_valid_index()
+            if k is not None and isinstance(s.at[k], (dt.date, dt.datetime)):
+                out.add(i)
+    return out
+
+
 def _write_sheet(wb: Workbook, title: str, df: pd.DataFrame, headers: dict[str, str] | None = None,
                  cleaned: dict[str, int] | None = None):
     """Append `df` as sheet `title`. `cleaned`, when given, accumulates per column the cells whose control characters were
     removed (key: "<sheet>.<column>")."""
     ws = wb.create_sheet(title)
     ws.append([headers.get(c, c) if headers else c for c in df.columns])
-    date_cols = {i for i, c in enumerate(df.columns)
-                 if df[c].map(lambda v: isinstance(v, (dt.date, dt.datetime))).any()}
+    date_cols = _date_columns(df)
     colnames = list(df.columns)
     for row in df.itertuples(index=False, name=None):
         cells = []

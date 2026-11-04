@@ -819,3 +819,24 @@ de 30 pareados por completo) e usado nomes com similaridade 0,80 ("MARIA DA SILV
 caso passou a ser erro de digitação ("SILVS", 0,93). O ajuste da aba `dicionario` mantém `tabela` vazia para código sem rótulo.
 Efeito esperado nas bases reais: a correção 2 pode aumentar o número de pares `nome_nasc1`/`nasc_nome_sim` nas bases grandes
 (nomes comuns); é ganho de recall, não mudança de critério, mas vale olhar a diferença base a base na próxima rodada.
+
+### 2026-11-04 — Achado 8 da revisão (varredura de datas na gravação do xlsx): corrigido, com medida antes e depois
+Critério pré-registrado: o ganho só conta se aparecer na mediana de 3 gravações do mesmo quadro, no mesmo processo; se a
+varredura for parcela pequena do total, o achado fica registrado como superestimado, mesmo com a correção aplicada.
+Quadro de teste (sintético, forma da TUBENET real): 17.201 linhas × 200 colunas (3,44 milhões de células): 60 pares código +
+`_rotulo`, 10 colunas de data com 30% em branco, 20 inteiras anuláveis (`Int64`), 50 de texto; aba `dicionario` com 300 linhas.
+Script em `scratchpad/work/bench_xlsx.py` da sessão (não versionado; é o quadro acima e três chamadas a `excel.write_xlsx`).
+| | antes (`lambda` por célula) | depois (`_date_columns`) |
+|---|---|---|
+| detecção das colunas de data | 0,41 s | 0,01 s |
+| `write_xlsx`, 3 execuções | 26,5 / 27,6 / 26,8 s | 25,8 / 25,8 / 26,2 s |
+| mediana | 26,8 s | 25,8 s |
+Resultado: ganho de ~1 s (4%), consistente nas três execuções mas da ordem da variação entre elas. **O achado estava
+superestimado**: a varredura era 1,5% do tempo, não uma parcela relevante dos 89% que a gravação ocupa. O perfil (`cProfile`,
+uma execução, com a sobrecarga do próprio perfilador) diz onde o tempo está: ~95% dentro do openpyxl, por célula
+(`lxml_write_cell` 27 s de 65, `_values_to_row` 17 s, `Cell._bind_value` 12 s, `check_string` 5 s); o laço nosso em
+`_write_sheet` mais `_cell_value` são ~7 s (11%). Isso confirma a conclusão de 2026-10-22 ("o gargalo é o openpyxl, não o
+pandas") e descarta a hipótese que levantei na revisão de que a varredura explicasse parte dos 89%. Qualquer ganho real exige
+trocar o escritor (xlsxwriter em modo `constant_memory`, ou gravar CSV/parquet acima de certo tamanho), o que é o item P1
+do PLANO, não uma correção local. A correção fica porque é certa e tem teste (`test_date_columns_found_without_scanning_every_cell`:
+coluna de data que começa em branco mantém o formato `DD/MM/YYYY`; texto com cara de data não vira data).

@@ -43,3 +43,22 @@ def test_write_xlsx_no_note_when_clean(tmp_path):
     files, notes = write_xlsx(data, pd.DataFrame({"campo": ["A"]}), tmp_path / "limpo")
     assert notes == [] and files[0].exists()
     assert cleaned_note({}) is None
+
+
+def test_date_columns_found_without_scanning_every_cell(tmp_path):
+    """Code review of 2026-11-04, finding 8: date columns are recognised by dtype or by the first non-null value, not by a
+    Python lambda over every cell; a date column that starts with blanks still gets the DD/MM/YYYY format, and a text
+    column that happens to contain a date word does not."""
+    import datetime as dt
+    import pandas as pd
+    from openpyxl import load_workbook
+    from sinan_anotador.excel import _date_columns, write_xlsx
+    df = pd.DataFrame({"DT_A": [None, None, dt.date(2026, 1, 5)], "TS": pd.to_datetime(["2026-01-01", "2026-01-02", None]),
+                       "TXT": ["05/01/2026", "x", "y"], "N": pd.Series([1, None, 3], dtype="Int64")})
+    assert _date_columns(df) == {0, 1}
+    files, _ = write_xlsx(df, pd.DataFrame(columns=["campo", "tabela", "codigos", "rotulo", "uso"]), tmp_path / "t")
+    wb = load_workbook(files[0])
+    ws = wb["dados"]
+    assert ws["A4"].value == dt.datetime(2026, 1, 5) and ws["A4"].number_format == "DD/MM/YYYY"
+    assert ws["B2"].number_format == "DD/MM/YYYY" and ws["C2"].value == "05/01/2026" and ws["C2"].number_format == "General"
+    wb.close()
