@@ -398,7 +398,9 @@ Nele estão:
 - a versão do programa (primeira linha);
 - a codificação detectada no DBF (cp850 ou cp1252) e o `.def` escolhido;
 - os campos sem tabela de rótulos, as tabelas `.cnv` que o `.def` cita e o pacote não tem (a copiar do TabWin para
-  `app\tab_sinannet\`) e a cobertura de cada tabela externa (quantas unidades, ocupações e municípios ganharam nome);
+  `app\tab_sinannet\`) e a cobertura de cada tabela externa (quantas unidades, ocupações, CNAE e municípios ganharam nome,
+  por tabela), seguida dos códigos que ficaram sem nome (os 30 mais frequentes, com a contagem e o tamanho do código; a aba
+  `dicionario` traz todos, com rótulo "[sem rótulo]");
 - "Duplicidades suspeitas: N pares (perfil X; padrao N, nome_mae N, nome_nasc1 N, nasc_nome_sim N; já julgados no Sinan N)",
   a contagem por tipo sugerido (nos agudos, por faixa de dias), os registros que nenhuma chave alcança (seção 4.3) e a
   cobertura da tabela de ADS;

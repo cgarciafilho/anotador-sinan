@@ -32,6 +32,9 @@ class Log:
         path.write_text("\n".join(self.lines) + "\n", encoding="utf-8")
 
 
+MAX_MISSING_CODES_IN_LOG = 30     # codes without label listed per field in the log; the `dicionario` sheet has them all
+
+
 def expand_inputs(paths: list[str]) -> list[Path]:
     out: list[Path] = []
     for p in paths:
@@ -93,6 +96,14 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
                 pct = f"{100 * miss_n / cov['filled']:.1f}%" if cov["filled"] else "-"
                 log(f"  Cobertura {fld}: {cov['filled']} registros preenchidos; rotulados por {parts or 'nenhuma tabela'}; "
                     f"sem rótulo {miss_n} ({pct}; {miss_k} códigos distintos)")
+                top = list(cov.get("missing_codes", {}).items())[:MAX_MISSING_CODES_IN_LOG]
+                if top:
+                    # the codes themselves, so that the next table (another version, a newer snapshot) can be decided from the log
+                    by_len = "; ".join(f"{k} dígitos {v}" for k, v in cov.get("missing_by_len", {}).items())
+                    shown = (f"os {len(top)} mais frequentes de {miss_k}; a lista completa está na aba dicionario"
+                             if miss_k > len(top) else f"{miss_k} distintos")
+                    log(f"    Códigos sem rótulo em {fld} ({shown}; por comprimento: {by_len}): "
+                        + ", ".join(f"{c} ×{n}" for c, n in top))
             for w in plan.warnings:
                 log(f"  AVISO {w}")
             for nt in plan.notes:

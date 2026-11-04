@@ -217,3 +217,93 @@ def test_cid10_csv_answers_for_agravnet(tab_dir, tmp_path):
         "Cólera", "[ZZZZ] sem rótulo"]
     log = Path(str(files[0]).replace("_anotado.xlsx", "_anotado.log.txt")).read_text(encoding="utf-8")
     assert "AVISO tabela externa AGRAVNET.DBF" not in log and "substituída por agravnet.csv" in log
+
+
+# ----------------------------------------------------------------------------- CNAE 2.3 next to CNAE 1.0 (METODO 2026-11-04)
+def _tab_with_cnae(tab_dir, d: Path) -> Path:
+    """TabWin tables plus a two-row CNAENET.DBF (CNAE 1.0) and the real cnaenet_cnae23.csv of the repository."""
+    d.mkdir()
+    for p in def_files(tab_dir) + list(tab_dir.glob("*.cnv")) + list(tab_dir.glob("*.CNV")):
+        shutil.copy(p, d / p.name)
+    shutil.copy(tab_dir / "cnaenet_cnae23.csv", d / "cnaenet_cnae23.csv")
+    write_dbf(d / "CNAENET.DBF", [("CLASS_CNAE", "C", 5, 0), ("DS_CNAE", "C", 60, 0), ("CO_SEQ", "N", 5, 0)],
+              [{"CLASS_CNAE": "15890", "DS_CNAE": "FABRICACAO DE OUTROS PRODUTOS ALIMENTICIOS", "CO_SEQ": 69},
+               {"CLASS_CNAE": "45217", "DS_CNAE": "EDIFICACOES", "CO_SEQ": 300}])
+    return d
+
+
+def test_cnae23_csv_is_complete_and_disjoint_from_cnae10(tab_dir):
+    """C1: the shipped CNAE 2.3 table has the 673 classes and 1.332 subclasses, every subclass starts with its class, and no
+    5-digit code of the TabWin CNAE 1.0 table (CNAENET.DBF, 580 classes) exists in it."""
+    import csv
+    rows = list(csv.DictReader((tab_dir / "cnaenet_cnae23.csv").open(encoding="utf-8")))
+    classes = {r["CODIGO"] for r in rows if r["NIVEL"] == "classe"}
+    subs = {r["CODIGO"] for r in rows if r["NIVEL"] == "subclasse"}
+    assert len(rows) == 2005 and len(classes) == 673 and len(subs) == 1332
+    assert all(len(c) == 5 and c.isdigit() for c in classes) and all(len(s) == 7 and s.isdigit() for s in subs)
+    assert all(s[:5] in classes for s in subs)
+    assert all(r["NOME"] for r in rows) and len({r["CODIGO"] for r in rows}) == len(rows)
+    t10 = load_lookup(tab_dir / "CNAENET.DBF", "cnae", "ds_cnae")
+    assert t10.n_rows == 580
+    assert not [c for c in classes if t10.lookup(c) is not None]      # zero codes in common between the versions
+    t23 = load_lookup(tab_dir / "cnaenet_cnae23.csv", "cnae", "ds_cnae")
+    assert t23.lookup("86101") == "Atividades de atendimento hospitalar" and t23.lookup("9900800")
+    assert t23.lookup("8610101").startswith("Atividades de atendimento hospitalar, exceto")
+    assert t23.lookup("4713001") == t23.lookup("47130")        # subclass retired in 2.3 -> its class
+    assert t23.lookup("15890") is None and t23.lookup("1234567") is None
+
+
+def test_complement_files_follow_csv_and_precede_dbf(tab_dir, tmp_path):
+    """C2: `<stem>_*.csv` complements come after `<stem>.csv` and before the DBF; the CNAE chain is cnaenet_cnae23.csv, CNAENET.DBF."""
+    from sinan_anotador.lookup import find_lookup_files
+    d = _tab_with_cnae(tab_dir, tmp_path / "tab")
+    assert [p.name for p in find_lookup_files("cnaenet.dbf", d)] == ["cnaenet_cnae23.csv", "CNAENET.DBF"]
+    (d / "CNAENET.csv").write_text("CODIGO,NOME\n99999,Teste\n", encoding="utf-8")
+    (d / "cnaenet_b.csv.gz").write_bytes(b"")
+    assert [p.name for p in find_lookup_files("cnaenet.dbf", d)] == ["CNAENET.csv", "cnaenet_b.csv.gz", "cnaenet_cnae23.csv",
+                                                                     "CNAENET.DBF"]
+    assert [p.name for p in find_lookup_files("unidanet.dbf", d)] == []
+
+
+def test_cnae_fields_label_both_versions_and_log_lists_missing_codes(tab_dir, tmp_path):
+    """C2/C3 end to end: 1.0 code keeps the 1.0 name, 2.3 class and subclass get the 2.3 name, a retired subclass falls back to
+    its class, unknown codes stay unlabelled; the log breaks the unlabelled codes down by length and lists them; the dictionary
+    sheet carries one row per unlabelled code."""
+    d = _tab_with_cnae(tab_dir, tmp_path / "tab")
+    fields = [("NU_NOTIFIC", "C", 7, 0), ("DT_NOTIFIC", "D", 8, 0), ("CNAE", "C", 7, 0), ("CS_SEXO", "C", 1, 0)]
+    codes = ["15890", "86101", "8610101", "4713001", "", "99999", "99999", "1234567", "123"]
+    recs = [dict(NU_NOTIFIC=f"{i:07d}", DT_NOTIFIC=dt.date(2026, 1, 1), CNAE=c, CS_SEXO="M") for i, c in enumerate(codes)]
+    dbf = write_dbf(tmp_path / "ACGRANET.DBF", fields, recs)
+    ok, files = annotate_file(dbf, d, None, None, 1_048_575)
+    assert ok
+    header, rows = read_sheet(files[0], "dados")
+    assert column(header, rows, "CNAE_rotulo") == [
+        "FABRICACAO DE OUTROS PRODUTOS ALIMENTICIOS", "Atividades de atendimento hospitalar",
+        "Atividades de atendimento hospitalar, exceto pronto-socorro e unidades para atendimento a urgências",
+        "Comércio varejista de mercadorias em geral, sem predominância de produtos alimentícios", "Ign/Branco",
+        "[99999] sem rótulo", "[99999] sem rótulo", "[1234567] sem rótulo", "[123] sem rótulo"]
+    log = (tmp_path / "ACGRANET_anotado.log.txt").read_text(encoding="utf-8")
+    cov = next(l for l in log.splitlines() if l.strip().startswith("Cobertura CNAE:"))
+    assert "8 registros preenchidos" in cov and "cnaenet_cnae23.csv 3 (3 códigos)" in cov and "CNAENET.DBF 1 (1 códigos)" in cov
+    assert "sem rótulo 4 (50.0%; 3 códigos distintos)" in cov
+    assert ("Códigos sem rótulo em CNAE (3 distintos; por comprimento: 3 dígitos 1; 5 dígitos 1; 7 dígitos 1): "
+            "99999 ×2, 123 ×1, 1234567 ×1") in log
+    dh, drows = read_sheet(files[0], "dicionario")
+    missing = [r for r in drows if r[dh.index("campo")] == "CNAE" and r[dh.index("rotulo")] == "[sem rótulo]"]
+    assert sorted(r[dh.index("codigos")] for r in missing) == ["123", "1234567", "99999"]
+    assert all(r[dh.index("uso")].startswith("tabela externa (código ausente das tabelas; ") for r in missing)
+    assert all(not r[dh.index("tabela")] for r in missing)        # in none of the tables of the chain
+    labelled = [r for r in drows if r[dh.index("campo")] == "CNAE" and r[dh.index("rotulo")] != "[sem rótulo]"]
+    assert {r[dh.index("tabela")] for r in labelled} == {"cnaenet_cnae23.csv", "CNAENET.DBF"}
+
+
+def test_cnes_code_absent_from_unidanet_does_not_fall_back_to_a_prefix(tab_with_lookups):
+    """The class-prefix fallback is for CNAE tables only: a 7-digit CNES code the unit table lacks stays unlabelled even when its
+    first five digits happen to be a code of the table."""
+    d = tab_with_lookups
+    (d / "unidanet.csv").write_text("ID_UNIDADE,NM_UNIDADE\n25614,UNIDADE DE CINCO DIGITOS\n", encoding="utf-8")
+    try:
+        t = load_lookup(d / "unidanet.csv", "ID_UNIDADE", "NM_UNIDADE")
+        assert t.class_prefix == 0 and t.lookup("25614") and t.lookup("2561492") is None
+    finally:
+        (d / "unidanet.csv").unlink()

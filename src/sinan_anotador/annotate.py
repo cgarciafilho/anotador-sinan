@@ -435,12 +435,15 @@ def age_years(v) -> int | None:
 
 
 def lookup_coverage(codes: pd.Series, fp: FieldPlan) -> dict:
-    """How an external-table field was labelled: records and distinct codes, by table of the chain and without label.
-    This is the measure that decides whether a lookup table needs refreshing (e.g. unidanet from the public CNES)."""
+    """How an external-table field was labelled: records and distinct codes, by table of the chain and without label, plus the
+    codes without label themselves (`missing_codes`: code -> records, most frequent first) and how many distinct ones there are
+    per code length (`missing_by_len`: a CNAE of 5 digits is a class, of 7 a 2.x subclass; a CNES has 7). This is the measure that
+    decides whether a lookup table needs refreshing (e.g. unidanet from the public CNES) or another version (CNAE 2.x)."""
     counts = codes.value_counts()
     tables = [fp.cnv, *[fb for fb in fp.fallbacks if isinstance(fb, LookupTable)]]
     by_table = {t.name: [0, 0] for t in tables}          # records, distinct codes
     missing = [0, 0]
+    missing_codes: dict[str, int] = {}
     filled = 0
     for code, n in counts.items():
         if code == "":
@@ -454,7 +457,13 @@ def lookup_coverage(codes: pd.Series, fp: FieldPlan) -> dict:
         else:
             missing[0] += n
             missing[1] += 1
-    return {"filled": int(filled), "by_table": {k: tuple(v) for k, v in by_table.items()}, "missing": tuple(missing)}
+            missing_codes[code] = int(n)
+    by_len: dict[int, int] = {}
+    for code in missing_codes:
+        by_len[len(code)] = by_len.get(len(code), 0) + 1
+    ordered = dict(sorted(missing_codes.items(), key=lambda kv: (-kv[1], kv[0])))
+    return {"filled": int(filled), "by_table": {k: tuple(v) for k, v in by_table.items()}, "missing": tuple(missing),
+            "missing_codes": ordered, "missing_by_len": dict(sorted(by_len.items()))}
 
 
 def apply_plan(df: pd.DataFrame, plan: Plan) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -511,7 +520,10 @@ def apply_plan(df: pd.DataFrame, plan: Plan) -> tuple[pd.DataFrame, pd.DataFrame
         out_cols[f"{col}_rotulo"] = codes.map(uniq)
         add_dict(col, fp.cnv, "rótulo", uniq.keys())
         if isinstance(fp.cnv, LookupTable):
-            plan.coverage[col] = lookup_coverage(codes, fp)
+            cov = plan.coverage[col] = lookup_coverage(codes, fp)
+            for code, n in cov["missing_codes"].items():      # the full list of codes no table of the chain knows: `tabela` empty
+                dict_rows.append({"campo": col, "tabela": "", "codigos": code, "rotulo": "[sem rótulo]",
+                                  "uso": f"tabela externa (código ausente das tabelas; {n} registros)"})
         for fb in fp.fallbacks:
             if isinstance(fb, LookupTable):
                 add_dict(col, fb, "rótulo", [c for c in uniq if fp.cnv.lookup(c) is None])

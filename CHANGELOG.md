@@ -4,6 +4,23 @@ Formato de [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); numeraç
 `MAIOR.MENOR.CORREÇÃO`. Enquanto a versão for `0.x`, a forma das abas e das colunas ainda pode mudar entre versões menores.
 Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para Windows e sua soma sha256.
 
+## [Não lançado]
+
+### Adicionado
+- CNAE 2.3 na cadeia de busca dos campos `CNAE` e `CNAE_PRIN` das oito fichas de saúde do trabalhador:
+  `tabelas/tab_sinannet/cnaenet_cnae23.csv` (673 classes de 5 dígitos e 1.332 subclasses de 7, colunas `CODIGO,NOME,NIVEL`),
+  gerado por `scripts/make_cnae23_csv.py` a partir de cópias públicas da tabela do IBGE (o IBGE não era alcançável da sessão;
+  as cópias foram comparadas entre si, ver `docs/METODO.md`, 2026-11-04). A CNAE 1.0 do TabWin (`CNAENET.DBF`, 580 classes)
+  continua na cadeia: as duas versões não têm nenhum código de 5 dígitos em comum, então não há desempate nem risco de nome
+  da versão errada, e a linha `Cobertura` do log diz quantos registros cada versão rotulou. Subclasse de 7 dígitos que a tabela
+  não tem (retirada numa revisão da 2.x, como `4713-0/01`) recebe o nome da sua classe (os 5 primeiros dígitos); isso vale só
+  para tabelas de CNAE, não para o CNES. Fecha o item "Em revisão" da 0.4.0 quanto à colisão; a cobertura em base real ainda
+  não foi medida.
+- Complementos de tabela externa: além de `<tabela>.csv` e `<tabela>.dbf`, a cadeia carrega `<tabela>_*.csv` (e `.csv.gz`),
+  entre os dois, em ordem de nome.
+- O log lista os códigos sem rótulo de cada campo com tabela externa (CNES, CBO, CNAE…): os 30 mais frequentes, com a contagem
+  e a distribuição por tamanho do código; a aba `dicionario` traz a lista completa, com `rotulo` "[sem rótulo]" e `tabela` vazia.
+
 ## [0.4.0] - 2026-10-30
 
 ### Em revisão

@@ -4,12 +4,17 @@ agravnet.dbf). TabWin ships them as DBF; a CSV with the same stem (`unidanet.csv
 <CODE_FIELD>,<NAME_FIELD> or `codigo,nome`, or simply the first two columns) is accepted too and wins over the DBF, so a table
 built from the public CNES files (`scripts/make_unidanet_csv.py`) can replace the 2021 snapshot while the DBF complements it.
 
+A complement with the same stem and a suffix (`cnaenet_cnae23.csv`: the CNAE 2.3 classes and subclasses next to TabWin's
+CNAENET.DBF, which holds the CNAE 1.0 classes) is loaded too, after `<stem>.csv` and before the DBF; the chain tries the tables in
+that order (`annotate.lookup_chain`).
+
 A LookupTable quacks like a Cnv for `annotate.label_for`: `.name`, `.width` (0 = never cut the code), `.lookup(code)`.
 """
 from __future__ import annotations
 
 import csv
 import gzip
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -27,6 +32,7 @@ class LookupTable:
     _exact: dict[str, str] = field(default_factory=dict, repr=False)
     _numeric: dict[int, str] = field(default_factory=dict, repr=False)
     notes: list[str] = field(default_factory=list)
+    class_prefix: int = 0    # CNAE tables: a 7-digit subclass the table lacks falls back to its class (the first 5 digits)
 
     @property
     def categories(self) -> list[tuple[str, str]]:     # not written to the dictionary sheet in full (can be huge)
@@ -50,19 +56,33 @@ class LookupTable:
             lab = self._numeric.get(int(code))
         if lab is None and len(code) == 4 and code[0].isalpha() and code[1:3].isdigit():
             lab = self._exact.get(code[:3])      # CID-10 subcategory the table lacks: fall back to its category (X450 -> X45)
+        if lab is None and self.class_prefix and len(code) == 7 and code.isdigit():
+            # CNAE 2.x subclass (8610101) absent from the table, e.g. retired in a later revision (4713001 -> 4713004/05 in 2.3):
+            # its class is the first 5 digits (86101). Only for CNAE tables: a CNES code (7 digits too) must not do this.
+            lab = self._exact.get(code[: self.class_prefix])
         return lab
 
 
 def find_lookup_files(name: str, tab_dir: Path) -> list[Path]:
-    """All files on disk for a `.def` table name, best first: `unidanet.csv`, then `unidanet.csv.gz`, then `unidanet.dbf`
-    (case-insensitive). A CSV is a table we built or updated ourselves (e.g. from the public CNES files), so it beats the DBF
-    that TabWin ships; the DBF stays as a complement for codes the CSV lacks (see `annotate.lookup_chain`)."""
+    """All files on disk for a `.def` table name, best first: `unidanet.csv`, then `unidanet.csv.gz`, then the complements
+    `unidanet_*.csv` / `unidanet_*.csv.gz` (sorted by name), then `unidanet.dbf` (case-insensitive). A CSV is a table we built or
+    updated ourselves (e.g. from the public CNES files), so it beats the DBF that TabWin ships; the DBF stays as a complement for
+    codes the CSV lacks (see `annotate.lookup_chain`). A complement carries codes of another version or source of the same table
+    (`cnaenet_cnae23.csv` next to CNAENET.DBF)."""
     stem = Path(name).stem
     found: list[Path] = []
-    for cand in (stem + ".csv", stem + ".csv.gz", name):
+    for cand in (stem + ".csv", stem + ".csv.gz"):
         p = find_cnv(cand, tab_dir)
         if p is not None and p not in found:
             found.append(p)
+    prefix = unicodedata.normalize("NFC", stem).lower() + "_"
+    for p in sorted(Path(tab_dir).iterdir(), key=lambda q: q.name.lower()):
+        low = unicodedata.normalize("NFC", p.name).lower()
+        if low.startswith(prefix) and (low.endswith(".csv") or low.endswith(".csv.gz")) and p not in found:
+            found.append(p)
+    p = find_cnv(name, tab_dir)
+    if p is not None and p not in found:
+        found.append(p)
     return found
 
 
@@ -129,8 +149,12 @@ def load_lookup(path: Path, code_field: str, name_field: str) -> LookupTable:
     return _CACHE[key]
 
 
+CNAE_STEM = "cnaenet"     # the .def table name of the CNAE fields (cnaenet.dbf); its files get the class-prefix fallback
+
+
 def _load_lookup(path: Path, code_field: str, name_field: str) -> LookupTable:
-    table = LookupTable(name=path.name, path=path, code_field=code_field, name_field=name_field)
+    table = LookupTable(name=path.name, path=path, code_field=code_field, name_field=name_field,
+                        class_prefix=5 if path.name.lower().startswith(CNAE_STEM) else 0)
     if path.suffix.lower() == ".dbf":
         from .dbf import read_dbf
         df, info = read_dbf(path)

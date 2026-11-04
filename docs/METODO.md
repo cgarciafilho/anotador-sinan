@@ -727,3 +727,65 @@ por elas, com nota no log dizendo a fonte. Alternativa descartada: escrever as c
   São categorias copiadas do PDF oficial e dos `.cnv`, e esses campos saíam sem rótulo; mantido, registrado no CHANGELOG. Chaves
   que não são nome de coluna (`AGRAVDROGAS`, `ANTIRRETROVIRAL`, uma observação do PDF da hanseníase lida como variável) nunca casam.
 - C3 atendido na segunda rodada: 197 coletados (196 antes, 1 novo), 194 passando, 3 pulados, 175 s.
+
+### 2026-11-04 — CNAE: tabela da CNAE 2.3 ao lado da 1.0 do TabWin; o log passa a listar os códigos sem rótulo
+Contexto: a 0.4.0 saiu com o CNAE das fichas de saúde do trabalhador "em revisão" (README, LEIA-ME, CHANGELOG): nas 35 bases reais
+de 29/10, 1.258 de 2.805 códigos preenchidos (44,8%) ficaram sem rótulo, e a entrada de 2026-10-29 deixou como próximo passo "ver os
+códigos", que o log não listava. O usuário decidiu (sessão de 04/11, na nuvem, sem acesso às bases reais) preparar essa decisão:
+listar os códigos sem rótulo no log e pôr a CNAE 2.x na cadeia de busca, com aviso para a colisão temida entre versões.
+Fonte da CNAE 2.3: o IBGE/CONCLA (`servicodados.ibge.gov.br/api/v2/cnae`, `cnae.ibge.gov.br`) está fora da rede permitida à sessão
+(proxy devolve 403), então a tabela veio de cópias públicas no GitHub, comparadas entre si antes de qualquer código:
+- `OCA/l10n-brazil` (branch 16.0, `l10n_br_fiscal/data/l10n_br_fiscal.cnae.csv`, sha256 `e63131e6…1151ec`): hierarquia completa
+  com coluna `version` = 2.3 em todas as linhas; 21 seções, 87 divisões, 285 grupos, 673 classes, 1.331 subclasses.
+- `blitsoftwares/atividades_economicas_brasil` (`CNAES_20.csv`, sha256 `388ecb11…3bbc0`): 1.331 subclasses, **mesmo conjunto de
+  códigos** da OCA; 13 nomes diferem porque esse arquivo corta o nome no `;` (é artefato do CSV dele: "Produção de gás" para
+  "Produção de gás; processamento de gás natural…").
+- `fireho/govbr2txt` (`readable/cnaes.csv`, sha256 `812d1250…dc78c`): 673 classes (mesmo conjunto da OCA) e 1.327 subclasses de uma
+  revisão anterior da 2.x (traz `4713-0/01` e `4541-2/05`, que a 2.3 substituiu por `4713-0/04-05` e `4541-2/06-07`; `1610-2/01-02`,
+  substituídas na 2.2; falta `2539-0/01-02`). Nomes de classe diferem em 3 só por hífen/grafia ("infra-estrutura").
+- Lacuna comum às cópias: na OCA (e na BLIT) três classes ficam sem subclasse: `4790-3`, `7010-7` e `9900-8`. A cópia do govbr traz
+  `9900-8/00` (Organismos internacionais e outras instituições extraterritoriais); as outras duas não aparecem em nenhuma cópia.
+  Não dá para fechar aqui se a 2.3 oficial tem 1.331 ou 1.332 subclasses; fica como verificação para quando o IBGE estiver acessível.
+Medida que decide o desenho (feita antes do código): **nenhum** dos 580 códigos de classe da CNAE 1.0 (`CNAENET.DBF`, 5 dígitos
+com dígito verificador) existe entre os 673 códigos de classe da 2.3; 121 dos prefixos de 4 dígitos coincidem, mas o dígito
+verificador difere em todos. Logo um código de 5 dígitos pertence a uma versão só, e a colisão temida na 0.4.0 ("código da 2.0 que
+coincida com um da 1.0 recebe o nome errado sem aviso") não pode acontecer no nível de classe. Os 1.547 registros rotulados em 29/10
+são códigos da 1.0, e os 1.258 sem rótulo não estão na 1.0 (hipótese: classes de 5 ou subclasses de 7 dígitos da 2.x; o log da
+próxima rodada vai dizer). Como a 1.0 e a 2.3 não compartilham código, as duas tabelas podem conviver na mesma cadeia sem regra de
+desempate; a versão de cada registro sai na linha `Cobertura` do log (registros por tabela).
+Critério de aceite, escrito antes de mexer no código:
+- C1. `tabelas/tab_sinannet/cnaenet_cnae23.csv` (colunas `CODIGO,NOME,NIVEL`) gerado por `scripts/make_cnae23_csv.py` a partir das
+  cópias OCA e govbr, sem linha escrita à mão: as 673 classes e as 1.331 subclasses da OCA, mais as subclasses do govbr cujas classes
+  ficaram sem subclasse na OCA (regra geral; hoje só `9900800`). Zero código em comum com `CNAENET.DBF`. Código de subclasse começa
+  pelos 5 dígitos da sua classe em 100% das linhas (já conferido na OCA: 1.331 de 1.331).
+- C2. `lookup.find_lookup_files` passa a devolver também os complementos `<stem>_*.csv` (e `.csv.gz`), depois de `<stem>.csv` e antes
+  do `.dbf`; para o CNAE a cadeia fica `cnaenet_cnae23.csv`, `CNAENET.DBF`. Numa base sintética: código da 1.0 (`15890`) mantém o nome
+  da 1.0; classe da 2.3 (`86101`) e subclasse (`8610101`) recebem o nome da 2.3; subclasse de 7 dígitos que a tabela não tem
+  (`4713001`, retirada na 2.3) recebe o nome da sua classe (`47130`), só em tabela de CNAE (um CNES de 7 dígitos ausente do
+  `unidanet` **não** cai em prefixo); código em nenhuma tabela continua `[código] sem rótulo`.
+- C3. Log: a linha `Cobertura` separa os códigos distintos sem rótulo por comprimento ("5 dígitos N, 7 dígitos M, outros K"); uma linha
+  nova lista os códigos sem rótulo mais frequentes (até 30, com a contagem); a aba `dicionario` traz uma linha por código sem
+  rótulo de campo com tabela externa (`rotulo` = "[sem rótulo]"), para a lista completa.
+- C4. Suíte completa passando (197 coletados antes) e os testes sintéticos de ponta a ponta sem campo rotulado a menos.
+Consequência pré-registrada: se algum código de 5 dígitos aparecer nas duas tabelas (C1), o complemento não entra e a ideia volta ao
+PLANO; se um teste existente mudar de resultado, o ajuste é revertido, não o teste. A medida que vale (quantos dos 1.258 passam a ter
+nome, e quantos ficam) só sai na próxima rodada nas bases reais, na SESA, com o zip montado deste commit.
+Resultado (2026-11-04, mesma sessão):
+- C1 atendido. `cnaenet_cnae23.csv`: 2.005 linhas (673 classes, 1.332 subclasses: as 1.331 da OCA mais `9900800` do govbr pela
+  regra das classes sem subclasse; `4790-3` e `7010-7` seguem sem subclasse). Zero código em comum com `CNAENET.DBF`; 100% das
+  subclasses começam pelos 5 dígitos da classe. Teste `test_cnae23_csv_is_complete_and_disjoint_from_cnae10` fixa os números.
+- C2 atendido. `find_lookup_files("cnaenet.dbf")` devolve `cnaenet_cnae23.csv, CNAENET.DBF`; com um `CNAENET.csv` presente, ele
+  vem primeiro, depois os complementos em ordem de nome, depois o DBF. Base sintética de acidente grave: `15890` → nome da 1.0;
+  `86101` e `8610101` → nomes da 2.3; `4713001` → nome da classe `47130`; `99999`, `1234567`, `123` → "[código] sem rótulo".
+  A queda para a classe fica em `LookupTable.class_prefix`, ligado só quando o arquivo começa por `cnaenet`; um CNES de 7
+  dígitos ausente do `unidanet.csv` continua sem rótulo mesmo quando os 5 primeiros dígitos existem na tabela (teste próprio).
+- C3 atendido, com um ajuste de forma: a linha `Cobertura` ficou **igual** à de antes (um teste existente a confere por inteiro),
+  e a distribuição por comprimento foi para a linha nova: "Códigos sem rótulo em CNAE (3 distintos; por comprimento: 3 dígitos 1;
+  5 dígitos 1; 7 dígitos 1): 99999 ×2, 123 ×1, 1234567 ×1". Na aba `dicionario`, a linha do código sem rótulo sai com `tabela`
+  vazia (o código não está em tabela nenhuma), porque com o nome da tabela principal um teste existente da aba (códigos de
+  `unidanet.dbf` = unidades da tabela) mudava de resultado; a regra pré-registrada manda ajustar o código, não o teste.
+- C4 atendido: 201 coletados (197 antes, 4 novos), 197 passando, 4 pulados, 124 s.
+Pendente, só com acesso ao IBGE: conferir `cnaenet_cnae23.csv` contra a API oficial (`/api/v2/cnae/classes` e `/subclasses`), em
+especial se a 2.3 tem 1.331 ou 1.332 subclasses e se `4790-3` e `7010-7` têm subclasse. Pendente, na SESA: rodar as mesmas 35
+bases com o zip deste commit e ler, nos logs, a linha `Cobertura CNAE` (quantos registros em cada versão) e a lista de códigos
+que ainda ficam sem nome; a hipótese é que a maioria dos 1.258 seja da 2.x, mas é hipótese.

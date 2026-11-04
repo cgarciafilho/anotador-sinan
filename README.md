@@ -47,11 +47,12 @@ Acima de 1.048.575 registros (limite do Excel) a saída é dividida em um xlsx p
 - Campos cujo `.cnv` o TabWin não distribui ficam sem rótulo; o log diz quais (hoje só a UF de infecção da leptospirose
   e o bairro de dengue/chikungunya).
 - Ainda não preenche modelos de planilha dinâmica por agravo.
-- **Em revisão: CNAE nas fichas de saúde do trabalhador** (acidente de trabalho grave, exposição a material biológico,
-  intoxicação exógena, LER/DORT, transtorno mental, PAIR, câncer e dermatose relacionados ao trabalho). A tabela de CNAE que o
-  TabWin distribui é a CNAE 1.0 (580 classes de 5 dígitos); numa rodada com bases reais de 2026, 45% dos códigos preenchidos
-  ficaram sem nome e parte dos que receberam nome pode ter recebido o da classe homônima da CNAE 1.0. Até a próxima versão,
-  trate `CNAE_rotulo` e `CNAE_PRIN_rotulo` como provisórios; os demais campos dessas fichas, inclusive os CID, não são afetados.
+- **CNAE nas fichas de saúde do trabalhador** (acidente de trabalho grave, exposição a material biológico, intoxicação
+  exógena, LER/DORT, transtorno mental, PAIR, câncer e dermatose relacionados ao trabalho): o nome vem da CNAE 1.0 do TabWin
+  (580 classes) ou da CNAE 2.3 (`cnaenet_cnae23.csv`: 673 classes e 1.332 subclasses, de cópias públicas da tabela do IBGE); as
+  duas versões não têm código em comum, então o rótulo dado é o certo para a versão do código. Numa rodada com bases reais de
+  2026, só com a 1.0, 45% dos códigos preenchidos ficaram sem nome; o ganho com a 2.3 ainda não foi medido em base real. O log
+  lista os códigos que ficaram sem nome, para que se possa ver que tabela ainda falta.
 
 ## Versões
 
@@ -113,10 +114,12 @@ em `tests/`, com verdade conhecida; o DBF real só é testado por quem o detém,
 src/sinan_anotador/   código (cnv.py, dbf.py, annotate.py, names.py, lookup.py, duplicates.py, excel.py, cli.py)
 tests/                testes e geradores de base sintética
 build/                anotar.bat, LEIA-ME.txt, o script que monta o zip e o que gera o manual em PDF
-tabelas/tab_sinannet/ .def/.cnv (60 agravos, pacote completo de 2024) e DBFs do TAB_SINANNET (TabWin, DATASUS) e unidanet.csv (CNES, 2026)
+tabelas/tab_sinannet/ .def/.cnv (60 agravos, pacote completo de 2024) e DBFs do TAB_SINANNET (TabWin, DATASUS); unidanet.csv (CNES, 2026),
+                      agravnet.csv (CID-10, TabWin do SIM) e cnaenet_cnae23.csv (CNAE 2.3)
 tabelas/dicionarios/  nomes por extenso dos campos (dicionários de dados do DATASUS: TB, hanseníase, LTA, LV)
 tabelas/regionalizacao_sesa_sr_ads.csv   município → ADS e superintendência regional (SESA-CE, 2022)
-scripts/              make_unidanet_csv.py: atualiza unidanet.csv a partir do CNES público
+scripts/              make_unidanet_csv.py (unidanet.csv do CNES público), make_agravnet_csv.py (CID-10 dos .cnv do SIM),
+                      make_cnae23_csv.py (CNAE 2.3 das cópias públicas)
 docs/                 MANUAL.md (manual do usuário), METODO.md e o levantamento das definições de duplicidade
 ```
 
@@ -124,6 +127,9 @@ docs/                 MANUAL.md (manual do usuário), METODO.md e o levantamento
 
 - Tabelas `.def`/`.cnv` e DBFs auxiliares: TabWin, pacote `TAB_SINANNET` do FTP do DATASUS / Ministério da Saúde.
 - `unidanet.csv`: `tbEstabelecimento` da base de dados pública do CNES (DATASUS), setembro de 2026.
+- `agravnet.csv`: CID-10 dos 22 `.cnv` por capítulo do TabWin do SIM (`OBITOS_CID10_TAB.zip`, DATASUS).
+- `cnaenet_cnae23.csv`: CNAE 2.3 (IBGE/CONCLA) por cópias públicas no GitHub (`OCA/l10n-brazil`, conferida contra
+  `blitsoftwares/atividades_economicas_brasil` e `fireho/govbr2txt`); a conferência está em `docs/METODO.md` (2026-11-04).
 - Dicionários de dados por agravo: PDFs do DATASUS.
 - Regionalização por ADS e superintendência regional: SESA-CE, lista de 02/03/2022.
 - Regras de duplicidade: manuais do Sinan (MS/SVS), cadernos de análise por agravo, Nota Técnica SES-DF 10/2020, notas
