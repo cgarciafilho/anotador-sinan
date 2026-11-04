@@ -18,6 +18,8 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import pandas as pd
+
 from .cnv import find_cnv
 
 
@@ -161,9 +163,9 @@ def _load_lookup(path: Path, code_field: str, name_field: str) -> LookupTable:
         code_col, name_col = _pick_columns(list(df.columns), code_field, name_field, table.notes)
         table.notes.append(f"{info.encoding_note}")
         for c, n in zip(df[code_col].tolist(), df[name_col].tolist()):
-            if c is None or n is None:
+            if c is None or n is None or pd.isna(c) or pd.isna(n):    # blank numeric code comes as pd.NA (Int64) or NaN
                 continue
-            table.add(str(c if not isinstance(c, float) else int(c)), str(n))
+            table.add(str(int(c)) if isinstance(c, float) and c.is_integer() else str(c), str(n))
     else:
         raw = gzip.decompress(path.read_bytes()) if path.name.lower().endswith(".gz") else path.read_bytes()
         try:

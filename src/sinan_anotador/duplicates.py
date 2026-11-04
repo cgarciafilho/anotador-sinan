@@ -172,14 +172,16 @@ def find_pairs(df: pd.DataFrame, log: list[str] | None = None, stats: dict | Non
         if len(toks) < 2 or nasc[i] is None:
             continue
         blocks.setdefault((toks[0], toks[-1], nasc[i], sexo[i]), []).append(i)
-    big = 0
-    for idx in blocks.values():
-        if len(idx) > 1:
-            big += len(idx) > MAX_BLOCK
-            for i, j in _pairs_in_block(idx, order):
-                add(i, j, "padrao")
-    if big:
-        log.append(f"AVISO: {big} grupos com mais de {MAX_BLOCK} registros na chave padrao; neles só registros consecutivos por data foram pareados")
+    big: dict[str, int] = {k: 0 for k in KEYS}      # blocks above MAX_BLOCK, per key: paired consecutively by date, and logged
+
+    def pairs_of(blocks: dict[tuple, list[int]], key: str):
+        for idx in blocks.values():
+            if len(idx) > 1:
+                big[key] += len(idx) > MAX_BLOCK
+                yield from _pairs_in_block(idx, order)
+
+    for i, j in pairs_of(blocks, "padrao"):
+        add(i, j, "padrao")
 
     # nome_mae: full name + mother's name
     if "NM_MAE_PAC" in df:
@@ -187,35 +189,34 @@ def find_pairs(df: pd.DataFrame, log: list[str] | None = None, stats: dict | Non
         for i in range(n):
             if nome[i] and mae[i]:
                 blocks.setdefault((nome[i], mae[i]), []).append(i)
-        for idx in blocks.values():
-            if len(idx) > 1:
-                for i, j in _pairs_in_block(idx, order):
-                    add(i, j, "nome_mae")
+        for i, j in pairs_of(blocks, "nome_mae"):
+            add(i, j, "nome_mae")
 
-    # nome_nasc1: full name + sex, birth one component off
+    # nome_nasc1: full name + sex, birth one component off. Before 2026-11-04 a block above MAX_BLOCK was skipped without a
+    # word in the log (a common name in a state-wide base lost every pair of this key); now it is paired consecutively, as padrao
     blocks = {}
     for i in range(n):
         if nome[i] and nasc[i] is not None:
             blocks.setdefault((nome[i], sexo[i]), []).append(i)
-    for idx in blocks.values():
-        if 1 < len(idx) <= MAX_BLOCK:
-            for i, j in combinations(idx, 2):
-                if birth_one_component_off(nasc[i], nasc[j]):
-                    add(i, j, "nome_nasc1")
+    for i, j in pairs_of(blocks, "nome_nasc1"):
+        if birth_one_component_off(nasc[i], nasc[j]):
+            add(i, j, "nome_nasc1")
 
     # nasc_nome_sim: same birth + sex, similar full name (sharing the first or the last token, to keep it cheap)
     blocks = {}
     for i in range(n):
         if nome[i] and nasc[i] is not None:
             blocks.setdefault((nasc[i], sexo[i]), []).append(i)
-    for idx in blocks.values():
-        if 1 < len(idx) <= MAX_BLOCK:
-            for i, j in combinations(idx, 2):
-                if nome[i] == nome[j]:
-                    continue
-                ti, tj = nome[i].split(), nome[j].split()
-                if (ti[0] == tj[0] or ti[-1] == tj[-1]) and similar(nome[i], nome[j]):
-                    add(i, j, "nasc_nome_sim")
+    for i, j in pairs_of(blocks, "nasc_nome_sim"):
+        if nome[i] == nome[j]:
+            continue
+        ti, tj = nome[i].split(), nome[j].split()
+        if (ti[0] == tj[0] or ti[-1] == tj[-1]) and similar(nome[i], nome[j]):
+            add(i, j, "nasc_nome_sim")
+    if any(big.values()):
+        log.append(f"AVISO: grupos com mais de {MAX_BLOCK} registros na mesma chave ("
+                   + ", ".join(f"{k} {v}" for k, v in big.items() if v)
+                   + "); neles só registros consecutivos por data de notificação foram pareados")
     return pairs
 
 
@@ -321,8 +322,8 @@ def _keep(a: pd.Series, b: pd.Series) -> tuple[str, str]:
     da, db = to_date(a.get("DT_NOTIFIC")), to_date(b.get("DT_NOTIFIC"))
     if da is not None and db is not None and da != db:
         return ("A" if da < db else "B"), "notificação mais antiga"
-    ra = code(a.get("ID_MUNICIP")) and code(a.get("ID_MUNICIP")) == code(a.get("ID_MN_RESI"))
-    rb = code(b.get("ID_MUNICIP")) and code(b.get("ID_MUNICIP")) == code(b.get("ID_MN_RESI"))
+    ra = bool(code(a.get("ID_MUNICIP"))) and code(a.get("ID_MUNICIP")) == code(a.get("ID_MN_RESI"))
+    rb = bool(code(b.get("ID_MUNICIP"))) and code(b.get("ID_MUNICIP")) == code(b.get("ID_MN_RESI"))
     if ra != rb:
         return ("A" if ra else "B"), "mesma data; notificada pelo município de residência"
     return "A", "mesma data; sem desempate pela residência (primeira na ordem do arquivo)"
@@ -437,6 +438,6 @@ def build_tables(df: pd.DataFrame, raw_columns: list[str], def_stem: str | None,
     short_cols = list(short[0].keys()) if short else ["par", "tipo_sugerido"]
     full_df, short_df = pd.DataFrame(rows, columns=full_cols), pd.DataFrame(short, columns=short_cols)
     if rows:   # grouped by the ADS that digitised the first notification, then by date: the order a regional reads it in
-        order = sorted(range(len(rows)), key=lambda k: (rows[k]["ADS_notificacao_A"] or "~", to_date(rows[k]["DT_NOTIFIC_A"]) or dt.date.max, k))
+        order = sorted(range(len(rows)), key=lambda k: (rows[k]["ADS_notificacao_A"] or "~", to_date(rows[k].get("DT_NOTIFIC_A")) or dt.date.max, k))
         full_df, short_df = full_df.iloc[order].reset_index(drop=True), short_df.iloc[order].reset_index(drop=True)
     return full_df, short_df, stats

@@ -789,3 +789,33 @@ Pendente, só com acesso ao IBGE: conferir `cnaenet_cnae23.csv` contra a API ofi
 especial se a 2.3 tem 1.331 ou 1.332 subclasses e se `4790-3` e `7010-7` têm subclasse. Pendente, na SESA: rodar as mesmas 35
 bases com o zip deste commit e ler, nos logs, a linha `Cobertura CNAE` (quantos registros em cada versão) e a lista de códigos
 que ainda ficam sem nome; a hipótese é que a maioria dos 1.258 seja da 2.x, mas é hipótese.
+
+### 2026-11-04 — Revisão de código do pacote (nível alto): dez achados, seis corrigidos
+Contexto: com o CNAE fechado, o usuário pediu uma revisão de código do pacote inteiro (`src/sinan_anotador`, ≈2.200 linhas), em
+nível alto (recall acima de precisão). Método: leitura integral dos oito módulos; cada candidato a bug reproduzido em código
+quando possível antes de ser reportado; nenhum subagente. Sem CLAUDE.md no repositório, nada no ângulo de convenções.
+Achados (ordem de gravidade), com o que foi confirmado em execução marcado como tal:
+1. `duplicates.build_tables` acessa `rows[k]["DT_NOTIFIC_A"]` sem `.get`: base sem `DT_NOTIFIC` com ≥ 1 par → `KeyError` →
+   `RESULTADO: FALHA`, xlsx não gravado. **Confirmado** (DataFrame sintético).
+2. `find_pairs`: bloco > `MAX_BLOCK` (50) descartado em silêncio em `nome_nasc1` e `nasc_nome_sim`; reduzido sem aviso em
+   `nome_mae`; só `padrao` avisava. Por leitura; o teste novo reproduz (60 "MARIA DA SILVA" F: 0 pares da chave antes).
+3. `_keep`: `code(...) and code(...) == code(...)` dá `''` ou `False`; `'' != False` → ficha com `ID_MUNICIP` em branco vence o
+   desempate como "notificada pelo município de residência". **Confirmado.**
+4. `apply_plan`: linhas da aba `dicionario` por tabela complementar listavam os códigos que a tabela *principal* não tem, não os
+   que chegaram àquela tabela; código rotulado por UNIDANET aparecia de novo sob UNIDINVEST com outro nome. **Confirmado.**
+5. `lookup._load_lookup` (DBF): só testava `None`; `pd.NA` (inteiro em branco) virava código "<NA>", `NaN` (decimal) dava
+   `int(nan)` e rejeitava a tabela. Por leitura; o teste novo reproduz os dois casos.
+6. `cli.annotate_file`: `out_dir.mkdir` antes do `try`; `--saida` inválida abortava o lote sem log. Por leitura; teste reproduz.
+7. `excel.write_xlsx` sem `NU_ANO`/`DT_NOTIFIC`: arquivos `_0_parteN.xlsx` e "ano 0" no log. Não corrigido (arrumação).
+8. `excel._write_sheet`: lambda Python por célula de toda a tabela só para achar colunas de data, no caminho que é 89% do
+   tempo. Não corrigido; medir antes/depois quando for feito (reabre o item P1 do PLANO com causa diferente da suposta).
+9. `.def` parseados duas vezes por DBF; `find_cnv` varre a pasta por linha de `.def` candidato. Não corrigido.
+10. `duplicates.code()` duplica `annotate.code_of()` com arestas diferentes (`True` → "True"/"T"; "10.0" → "10"/"10.0").
+    Não corrigido.
+Decisão do usuário: corrigir 1–6, um teste por item. Critério: cada teste falha no código anterior e passa no novo; nenhum teste
+existente muda de resultado. Resultado: 207 coletados (201 antes, 6 novos), 203 passando, 4 pulados. Dois testes novos
+precisaram de ajuste de dados, não de código: no de blocos grandes eu tinha afirmado 0 pares `padrao` (eram 870: dois blocos
+de 30 pareados por completo) e usado nomes com similaridade 0,80 ("MARIA DA SILVA" / "… SANTOS"), abaixo do limiar 0,85 — o
+caso passou a ser erro de digitação ("SILVS", 0,93). O ajuste da aba `dicionario` mantém `tabela` vazia para código sem rótulo.
+Efeito esperado nas bases reais: a correção 2 pode aumentar o número de pares `nome_nasc1`/`nasc_nome_sim` nas bases grandes
+(nomes comuns); é ganho de recall, não mudança de critério, mas vale olhar a diferença base a base na próxima rodada.

@@ -279,3 +279,53 @@ def test_blank_names_raise_a_warning_in_the_log():
     full, short, st = build_tables(df, list(df.columns), "MeningeNET", log)
     assert st["pairs"] == 0 and st["sem_chave"]["sem_nome"] == 2
     assert any(l.startswith("AVISO: NM_PACIENT em branco em 2 de 2 registros") for l in log), log
+
+
+# ----------------------------------------------------------------------------- code review of 2026-11-04 (findings 1-3)
+def test_pairs_without_dt_notific_do_not_crash():
+    """Finding 1: a base without DT_NOTIFIC (partial or de-identified export) with at least one pair used to raise KeyError on
+    DT_NOTIFIC_A while ordering the sheet, which ended the whole run as FALHA."""
+    df = pd.DataFrame({"NU_NOTIFIC": ["1", "2", "3"], "NM_PACIENT": ["JOAO DA SILVA", "JOAO DA SILVA", "ANA LIMA"],
+                       "DT_NASC": [dt.date(2000, 1, 1)] * 3, "CS_SEXO": ["M", "M", "F"]})
+    full, short, st = build_tables(df, list(df.columns), None, [], {})
+    assert st["pairs"] == 1 and len(full) == 1 and len(short) == 1
+    assert "DT_NOTIFIC_A" not in full.columns and full.iloc[0]["chaves"] == "padrao"
+
+
+def test_large_blocks_are_paired_consecutively_for_every_key():
+    """Finding 2: a block above MAX_BLOCK (same name + sex, or same birth + sex) was skipped in silence for nome_nasc1 and
+    nasc_nome_sim; now every key pairs such blocks consecutively by notification date and the log names the keys."""
+    from sinan_anotador.duplicates import MAX_BLOCK, find_pairs
+    n = MAX_BLOCK + 10
+    base = dt.date(1990, 5, 10)
+    # nome_nasc1: same full name and sex, birth dates one day apart between consecutive records
+    df = pd.DataFrame({"NM_PACIENT": ["MARIA DA SILVA"] * n, "CS_SEXO": ["F"] * n,
+                       "DT_NASC": [base + dt.timedelta(days=i % 2) for i in range(n)],
+                       "DT_NOTIFIC": [dt.date(2026, 1, 1) + dt.timedelta(days=i) for i in range(n)]})
+    log: list[str] = []
+    pairs = find_pairs(df, log)
+    by_key = Counter(k for ks in pairs.values() for k in ks)
+    assert by_key["nome_nasc1"] == n - 1            # every consecutive pair differs by one day
+    assert any("grupos com mais de" in m and "nome_nasc1 1" in m for m in log), log
+    # nasc_nome_sim: same birth and sex, similar names
+    # a typing error in the surname (ratio 0.93 >= 0.85); "MARIA DA SILVA SANTOS" would be 0.80, not similar
+    df = pd.DataFrame({"NM_PACIENT": ["MARIA DA SILVA" if i % 2 else "MARIA DA SILVS" for i in range(n)], "CS_SEXO": ["F"] * n,
+                       "DT_NASC": [base] * n, "DT_NOTIFIC": [dt.date(2026, 1, 1) + dt.timedelta(days=i) for i in range(n)]})
+    log = []
+    pairs = find_pairs(df, log)
+    by_key = Counter(k for ks in pairs.values() for k in ks)
+    assert by_key["nasc_nome_sim"] == n - 1
+    assert any("nasc_nome_sim 1" in m for m in log), log
+
+
+def test_keep_tie_break_ignores_blank_municipality():
+    """Finding 3: `code(...) and code(...) == ...` mixed '' and False, so the record with a blank ID_MUNICIP won the tie as
+    'notificada pelo município de residência'."""
+    from sinan_anotador.duplicates import _keep
+    same_day = dt.date(2026, 1, 1)
+    a = pd.Series({"DT_NOTIFIC": same_day, "ID_MUNICIP": "230440", "ID_MN_RESI": "230100"})
+    b = pd.Series({"DT_NOTIFIC": same_day, "ID_MUNICIP": "", "ID_MN_RESI": "230100"})
+    assert _keep(a, b) == ("A", "mesma data; sem desempate pela residência (primeira na ordem do arquivo)")
+    b2 = pd.Series({"DT_NOTIFIC": same_day, "ID_MUNICIP": "230100", "ID_MN_RESI": "230100"})
+    assert _keep(a, b2) == ("B", "mesma data; notificada pelo município de residência")
+    assert _keep(b2, a) == ("A", "mesma data; notificada pelo município de residência")

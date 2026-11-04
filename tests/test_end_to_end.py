@@ -232,3 +232,16 @@ def test_deleted_records_are_not_exported(tab_dir, tmp_path):
     header, rows = read_sheet(files[0], "dados")
     assert len(rows) == 4
     assert "apagados" in (tmp_path / "HANSNET_anotado.log.txt").read_text(encoding="utf-8")
+
+
+def test_unusable_output_folder_is_a_logged_failure(tab_dir, tmp_path):
+    """Code review of 2026-11-04, finding 6: `--saida` that cannot be created raised out of annotate_file (before the try),
+    aborting the whole batch with no log; now the run fails like any other error and the log lands next to the DBF."""
+    from dbf_writer import write_dbf
+    dbf = write_dbf(tmp_path / "TUBENET.DBF", [("NU_NOTIFIC", "C", 7, 0), ("CS_SEXO", "C", 1, 0)],
+                    [{"NU_NOTIFIC": "0000001", "CS_SEXO": "M"}])
+    (tmp_path / "arquivo.txt").write_text("não é pasta", encoding="utf-8")
+    ok, files = annotate_file(dbf, tab_dir, tmp_path / "arquivo.txt" / "saida", None, 1_048_575)
+    assert not ok and files == []
+    log = (tmp_path / "TUBENET_anotado.log.txt").read_text(encoding="utf-8")
+    assert "RESULTADO: FALHA" in log and "log gravado ao lado do DBF" in log

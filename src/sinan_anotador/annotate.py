@@ -524,9 +524,11 @@ def apply_plan(df: pd.DataFrame, plan: Plan) -> tuple[pd.DataFrame, pd.DataFrame
             for code, n in cov["missing_codes"].items():      # the full list of codes no table of the chain knows: `tabela` empty
                 dict_rows.append({"campo": col, "tabela": "", "codigos": code, "rotulo": "[sem rótulo]",
                                   "uso": f"tabela externa (código ausente das tabelas; {n} registros)"})
+        left = [c for c in uniq if fp.cnv.lookup(c) is None]     # codes the chain has not labelled yet, table by table
         for fb in fp.fallbacks:
             if isinstance(fb, LookupTable):
-                add_dict(col, fb, "rótulo", [c for c in uniq if fp.cnv.lookup(c) is None])
+                add_dict(col, fb, "rótulo", left)       # only what this table was actually asked (label_for stops at the first hit)
+                left = [c for c in left if fb.lookup(c) is None]
                 continue
             if fb.name not in seen_cnv:
                 add_dict("(complemento para códigos fora da tabela principal)", fb, "rótulo (complemento)")

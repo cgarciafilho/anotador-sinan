@@ -21,6 +21,22 @@ Cada versão tem uma tag `vX.Y.Z` no git e um release no GitHub com o zip para W
 - O log lista os códigos sem rótulo de cada campo com tabela externa (CNES, CBO, CNAE…): os 30 mais frequentes, com a contagem
   e a distribuição por tamanho do código; a aba `dicionario` traz a lista completa, com `rotulo` "[sem rótulo]" e `tabela` vazia.
 
+### Corrigido
+Revisão de código do pacote inteiro (2026-11-04; critério e resultado em `docs/METODO.md`), seis correções, cada uma com teste:
+- Duplicidades: base sem `DT_NOTIFIC` com ao menos um par derrubava a rodada inteira (`KeyError` ao ordenar a aba); agora
+  a aba sai sem a coluna de data.
+- Duplicidades: grupo com mais de 50 registros de mesmo nome e sexo (ou mesma data de nascimento e sexo) era descartado em
+  silêncio nas chaves `nome_nasc1` e `nasc_nome_sim`, e reduzido sem aviso em `nome_mae`; agora todas as chaves pareiam
+  registros consecutivos por data de notificação nesses grupos, como `padrao` já fazia, e o log diz quantos grupos por chave.
+- Duplicidades: no desempate da ficha a manter (mesma data), a ficha com município de notificação em branco ganhava como
+  "notificada pelo município de residência"; a comparação misturava texto vazio com falso.
+- Aba `dicionario`: um código rotulado pela primeira tabela complementar da cadeia (UNIDANET) aparecia de novo sob as seguintes
+  (UNIDINVEST), com o nome que não foi usado; agora cada tabela lista só os códigos que chegaram até ela.
+- Tabela externa em DBF com código numérico em branco: a linha virava o código "<NA>" (inteiro) ou derrubava a tabela inteira
+  (decimal, `int(nan)`); a linha é ignorada.
+- `--saida` que não pode ser criada: a falha estourava fora do `try`, abortava o lote todo e não deixava log; agora é uma
+  falha registrada, com o log gravado ao lado do DBF.
+
 ## [0.4.0] - 2026-10-30
 
 ### Em revisão

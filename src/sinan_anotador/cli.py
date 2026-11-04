@@ -52,7 +52,6 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
     log = Log()
     t0 = time.time()
     out_dir = out_dir or dbf_path.parent
-    out_dir.mkdir(parents=True, exist_ok=True)
     base = out_dir / f"{dbf_path.stem}_anotado"
     log_path = out_dir / f"{dbf_path.stem}_anotado.log.txt"
     ok = False
@@ -61,6 +60,7 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
         log(f"anotador SINAN {__version__} — {dt.datetime.now():%d/%m/%Y %H:%M:%S}")
         log(f"Arquivo de entrada: {dbf_path}")
         log(f"Tabelas TabWin: {tab_dir}")
+        out_dir.mkdir(parents=True, exist_ok=True)      # inside the try: a --saida that cannot be created is a logged failure
         df, info = read_dbf(dbf_path, encoding=encoding)
         t_read = time.time()
         log(f"Registros lidos: {info.n_records_read} (cabeçalho declara {info.n_records_header}); campos: {len(info.fields)}"
@@ -172,7 +172,12 @@ def annotate_file(dbf_path: Path, tab_dir: Path, out_dir: Path | None, encoding:
     except Exception:
         log("RESULTADO: FALHA")
         log(traceback.format_exc())
-    log.write(log_path)
+    try:
+        log.write(log_path)
+    except OSError:                 # the output folder could not be created or written: keep the log next to the DBF
+        log_path = dbf_path.parent / log_path.name
+        log(f"(log gravado ao lado do DBF porque a pasta de saída {out_dir} não pôde ser usada)")
+        log.write(log_path)
     return ok, files
 
 

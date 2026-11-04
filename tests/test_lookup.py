@@ -307,3 +307,34 @@ def test_cnes_code_absent_from_unidanet_does_not_fall_back_to_a_prefix(tab_with_
         assert t.class_prefix == 0 and t.lookup("25614") and t.lookup("2561492") is None
     finally:
         (d / "unidanet.csv").unlink()
+
+
+# ----------------------------------------------------------------------------- code review of 2026-11-04 (findings 4-5)
+def test_dictionary_lists_a_code_only_under_the_table_that_labelled_it():
+    """Finding 4: a code labelled by the first fallback was listed again under every later fallback that also knew it, with
+    that table's unused name; the dictionary rows now follow the chain the way label_for walks it."""
+    import pandas as pd
+    from sinan_anotador.annotate import FieldPlan, Plan, apply_plan
+    from sinan_anotador.cnv import DefFile
+    t1 = LookupTable("a.csv", Path("a.csv"), "ID_UNIDADE", "NM"); t1.add("1", "UM A")
+    t2 = LookupTable("b.dbf", Path("b.dbf"), "ID_UNIDADE", "NM"); t2.add("2", "DOIS B")
+    t3 = LookupTable("c.dbf", Path("c.dbf"), "ID_UNIDADE", "NM"); t3.add("2", "DOIS C"); t3.add("3", "TRES C")
+    plan = Plan(DefFile("x", Path("x"), None, []), {"ID_UNIDADE": FieldPlan("ID_UNIDADE", t1, 1, [t2, t3])}, None, None, [], [])
+    ann, dic = apply_plan(pd.DataFrame({"ID_UNIDADE": ["1", "2", "3", "9"]}), plan)
+    assert ann["ID_UNIDADE_rotulo"].tolist() == ["UM A", "DOIS B", "TRES C", "[9] sem rótulo"]
+    rows = sorted((r.tabela, r.codigos, r.rotulo) for r in dic.itertuples())
+    assert rows == sorted([("a.csv", "1", "UM A"), ("b.dbf", "2", "DOIS B"), ("c.dbf", "3", "TRES C"), ("", "9", "[sem rótulo]")])
+
+
+def test_lookup_dbf_with_blank_numeric_codes(tmp_path):
+    """Finding 5: a blank integer code (pd.NA after read_dbf) became the code '<NA>' and a blank numeric code with decimals
+    (NaN) raised on int(nan), rejecting the whole table."""
+    write_dbf(tmp_path / "regionet.dbf", [("ID_REGIONA", "N", 4, 0), ("NM_REGIONA", "C", 30, 0)],
+              [{"ID_REGIONA": 1, "NM_REGIONA": "PRIMEIRA"}, {"ID_REGIONA": None, "NM_REGIONA": "SEM CODIGO"},
+               {"ID_REGIONA": 2, "NM_REGIONA": "SEGUNDA"}])
+    t = load_lookup(tmp_path / "regionet.dbf", "ID_REGIONA", "NM_REGIONA")
+    assert t.n_rows == 2 and t.lookup("<NA>") is None and t.lookup("1") == "PRIMEIRA" and t.lookup("0002") == "SEGUNDA"
+    write_dbf(tmp_path / "paisnet.dbf", [("ID_PAIS", "N", 6, 1), ("NM_PAIS", "C", 30, 0)],
+              [{"ID_PAIS": 1.0, "NM_PAIS": "BRASIL"}, {"ID_PAIS": None, "NM_PAIS": "SEM CODIGO"}])
+    t = load_lookup(tmp_path / "paisnet.dbf", "ID_PAIS", "NM_PAIS")
+    assert t.n_rows == 1 and t.lookup("1") == "BRASIL"
